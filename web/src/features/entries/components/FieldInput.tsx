@@ -1,4 +1,8 @@
 import { Box, Switch, TextField, Typography } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs from "dayjs";
 import type { Field } from "@cms/shared";
 import { ReferenceField } from "./ReferenceField";
 
@@ -65,19 +69,24 @@ export function FieldInput({
       );
     case "date":
       return (
-        <TextField
-          label={field.name}
-          required={field.required}
-          type="date"
-          fullWidth
-          InputLabelProps={{ shrink: true }}
-          value={typeof value === "string" ? value : ""}
-          onChange={(e) =>
-            onChange(e.target.value === "" ? undefined : e.target.value)
-          }
-          error={Boolean(error)}
-          helperText={error}
-        />
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DatePicker
+            label={field.name}
+            value={typeof value === "string" && value ? dayjs(value) : null}
+            onChange={(d) =>
+              onChange(d && d.isValid() ? d.format("YYYY-MM-DD") : undefined)
+            }
+            slotProps={{
+              textField: {
+                fullWidth: true,
+                required: field.required,
+                error: Boolean(error),
+                helperText: error,
+              },
+              field: { clearable: true },
+            }}
+          />
+        </LocalizationProvider>
       );
     case "reference":
       return (

@@ -1,14 +1,22 @@
-import { useState } from 'react';
-import { Alert, Box, Button, CircularProgress, Paper, TextField, Typography } from '@mui/material';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import { useSchemas } from '@/shared/schema/SchemaProvider';
-import { slugify } from '@/shared/util/slug';
-import { FieldEditor } from './FieldEditor';
+import { useState } from "react";
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Paper,
+  TextField,
+  Typography,
+} from "@mui/material";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import { useSchemas } from "@/shared/schema/SchemaProvider";
+import { slugify } from "@/shared/util/slug";
+import { FieldEditor } from "./FieldEditor";
 import {
   useSchemaDraft,
   validateDraft,
   type SchemaDraftPayload,
-} from '../hooks/useSchemaDraft';
+} from "../hooks/useSchemaDraft";
 
 export function SchemaBuilder({
   mode,
@@ -18,7 +26,7 @@ export function SchemaBuilder({
   onSubmit,
   onCancel,
 }: {
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
   initial: SchemaDraftPayload;
   currentSchemaId?: string;
   saving: boolean;
@@ -27,7 +35,7 @@ export function SchemaBuilder({
 }) {
   const { schemas } = useSchemas();
   const draft = useSchemaDraft(initial);
-  const [apiIdEdited, setApiIdEdited] = useState(mode === 'edit');
+  const [apiIdEdited, setApiIdEdited] = useState(mode === "edit");
   const [submitted, setSubmitted] = useState(false);
 
   const errors = validateDraft(draft.name, draft.apiId, draft.fields);
@@ -38,7 +46,7 @@ export function SchemaBuilder({
 
   const handleName = (value: string) => {
     draft.setName(value);
-    if (mode === 'create' && !apiIdEdited) draft.setApiId(slugify(value));
+    if (mode === "create" && !apiIdEdited) draft.setApiId(slugify(value));
   };
 
   const handleSubmit = () => {
@@ -47,9 +55,21 @@ export function SchemaBuilder({
     onSubmit(draft.toPayload());
   };
 
+  const sectionLabel = {
+    display: "block",
+    mb: 1,
+    color: "text.secondary",
+    fontWeight: 600,
+    fontSize: 11,
+    letterSpacing: "0.06em",
+  } as const;
+
   return (
     <Box>
-      <Paper variant="outlined" className="p-5 mb-5">
+      <Typography variant="caption" sx={sectionLabel}>
+        DETAILS
+      </Typography>
+      <Paper variant="outlined" className="p-5 mb-6">
         <Box className="flex flex-wrap gap-4">
           <TextField
             label="Name"
@@ -67,11 +87,14 @@ export function SchemaBuilder({
               draft.setApiId(e.target.value);
             }}
             error={Boolean(shown(errors.apiId))}
-            helperText={shown(errors.apiId) ?? 'Used in the read API URL, e.g. /api/content/wine'}
+            helperText={
+              shown(errors.apiId) ??
+              "Used in the read API URL, e.g. /api/content/wine"
+            }
             sx={{ flex: 1, minWidth: 220 }}
           />
         </Box>
-        {mode === 'edit' && initial.apiId !== draft.apiId && (
+        {mode === "edit" && initial.apiId !== draft.apiId && (
           <Alert severity="warning" sx={{ mt: 2 }}>
             Changing the API id changes this type’s public read-API URL.
           </Alert>
@@ -79,8 +102,14 @@ export function SchemaBuilder({
       </Paper>
 
       <Box className="flex items-center justify-between mb-2">
-        <Typography variant="subtitle1">Fields</Typography>
-        <Button size="small" startIcon={<AddRoundedIcon />} onClick={draft.addField}>
+        <Typography variant="caption" sx={sectionLabel}>
+          FIELDS · {draft.fields.length}
+        </Typography>
+        <Button
+          size="small"
+          startIcon={<AddRoundedIcon />}
+          onClick={draft.addField}
+        >
           Add field
         </Button>
       </Box>
@@ -88,7 +117,9 @@ export function SchemaBuilder({
       <Paper variant="outlined">
         {draft.fields.length === 0 ? (
           <Box className="px-4 py-8 text-center">
-            <Typography color="text.secondary">No fields yet — add your first field.</Typography>
+            <Typography color="text.secondary">
+              No fields yet — add your first field.
+            </Typography>
           </Box>
         ) : (
           draft.fields.map((field, index) => (
@@ -121,9 +152,11 @@ export function SchemaBuilder({
           variant="contained"
           onClick={handleSubmit}
           disabled={saving}
-          startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
+          startIcon={
+            saving ? <CircularProgress size={16} color="inherit" /> : undefined
+          }
         >
-          {mode === 'create' ? 'Create content type' : 'Review & save'}
+          {mode === "create" ? "Create content type" : "Review & save"}
         </Button>
       </Box>
     </Box>

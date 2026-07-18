@@ -1,5 +1,5 @@
-import { Box, Typography } from '@mui/material';
-import type { ReactNode } from 'react';
+import { Box, Typography } from "@mui/material";
+import type { ReactNode } from "react";
 
 export function PageHeader({
   title,
@@ -11,16 +11,25 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <Box className="flex flex-wrap items-start justify-between gap-4 mb-6">
+    <Box
+      className="flex flex-wrap items-start justify-between gap-4 pb-4 mb-6"
+      sx={{ borderBottom: 1, borderColor: "divider" }}
+    >
       <Box className="min-w-0">
-        <Typography variant="h4">{title}</Typography>
+        <Typography variant="h5" noWrap={false}>
+          {title}
+        </Typography>
         {subtitle && (
-          <Typography color="text.secondary" className="mt-1">
+          <Typography variant="body2" color="text.secondary" className="mt-1">
             {subtitle}
           </Typography>
         )}
       </Box>
-      {actions && <Box className="flex items-center gap-2 shrink-0">{actions}</Box>}
+      {actions && (
+        <Box className="flex flex-wrap items-center gap-2 shrink-0">
+          {actions}
+        </Box>
+      )}
     </Box>
   );
 }

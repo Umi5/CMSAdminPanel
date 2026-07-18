@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 /** Set the browser tab / history title for the current screen. */
 export function useDocumentTitle(title: string): void {

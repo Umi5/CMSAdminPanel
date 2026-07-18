@@ -1,9 +1,9 @@
-import express from 'express';
-import cors from 'cors';
-import { store } from './store';
-import { seedIfEmpty } from './seed';
-import { registerRoutes } from './routes';
-import { errorHandler, notFoundHandler } from './middleware';
+import express from "express";
+import cors from "cors";
+import { store } from "./store";
+import { seedIfEmpty } from "./seed";
+import { registerRoutes } from "./routes";
+import { errorHandler, notFoundHandler } from "./middleware";
 
 store.load();
 seedIfEmpty(store);

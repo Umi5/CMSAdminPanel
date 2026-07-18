@@ -1,8 +1,8 @@
-import { Autocomplete, TextField } from '@mui/material';
-import type { Entry } from '@cms/shared';
-import { useFetch } from '@/shared/hooks/useFetch';
-import { useSchemas } from '@/shared/schema/SchemaProvider';
-import { getEntryLabel } from '@/shared/util/entryLabel';
+import { Autocomplete, TextField } from "@mui/material";
+import type { Entry } from "@cms/shared";
+import { useFetch } from "@/shared/hooks/useFetch";
+import { useSchemas } from "@/shared/schema/SchemaProvider";
+import { getEntryLabel } from "@/shared/util/entryLabel";
 
 /** Compact searchable picker of an entry from a target schema; yields its id.
  *  Used by the migration fix-up when a reference needs re-pointing. */
@@ -36,7 +36,10 @@ export function ReferenceSelect({
       isOptionEqualToValue={(a, b) => a.id === b.id}
       onChange={(_, entry) => onChange(entry?.id)}
       renderInput={(params) => (
-        <TextField {...params} placeholder={placeholder ?? `Pick ${target?.name ?? 'an entry'}`} />
+        <TextField
+          {...params}
+          placeholder={placeholder ?? `Pick ${target?.name ?? "an entry"}`}
+        />
       )}
     />
   );

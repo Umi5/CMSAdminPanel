@@ -1,11 +1,4 @@
-import {
-  Box,
-  Card,
-  CardActionArea,
-  CardContent,
-  Chip,
-  Typography,
-} from "@mui/material";
+import { Box, ListItemButton, Typography } from "@mui/material";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import type { Schema } from "@cms/shared";
 
@@ -23,31 +16,37 @@ export function SchemaCard({
   onOpen: () => void;
 }) {
   return (
-    <Card
-      sx={{
-        transition: "border-color 120ms ease",
-        "&:hover": { borderColor: "primary.main" },
-      }}
+    <ListItemButton
+      onClick={onOpen}
+      sx={{ px: 2.5, py: 1.75, borderRadius: 0 }}
     >
-      <CardActionArea onClick={onOpen}>
-        <CardContent className="flex items-center justify-between gap-4">
-          <Box className="min-w-0">
-            <Box className="flex items-center gap-2">
-              <Typography variant="subtitle1" noWrap>
-                {schema.name}
-              </Typography>
-              <Chip size="small" variant="outlined" label={schema.apiId} />
-            </Box>
-            <Typography variant="body2" color="text.secondary" className="mt-1">
-              {plural(schema.fields.length, "field", "fields")} ·{" "}
-              {entryCount === undefined
-                ? "—"
-                : plural(entryCount, "entry", "entries")}
-            </Typography>
-          </Box>
-          <ChevronRightRoundedIcon sx={{ color: "text.disabled" }} />
-        </CardContent>
-      </CardActionArea>
-    </Card>
+      <Box className="min-w-0 flex-1">
+        <Box className="flex items-center gap-2 min-w-0">
+          <Typography variant="subtitle2" noWrap>
+            {schema.name}
+          </Typography>
+          <Typography
+            component="span"
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+            }}
+            noWrap
+          >
+            {schema.apiId}
+          </Typography>
+        </Box>
+        <Typography variant="body2" color="text.secondary" className="mt-0.5">
+          {plural(schema.fields.length, "field", "fields")} ·{" "}
+          {entryCount === undefined
+            ? "—"
+            : plural(entryCount, "entry", "entries")}
+        </Typography>
+      </Box>
+      <ChevronRightRoundedIcon
+        sx={{ color: "text.disabled", ml: 2, flexShrink: 0 }}
+      />
+    </ListItemButton>
   );
 }

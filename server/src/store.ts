@@ -1,11 +1,11 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import type { Schema, Entry } from '@cms/shared';
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import type { Schema, Entry } from "@cms/shared";
 
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_DATA_FILE =
-  process.env.DATA_FILE ?? path.resolve(moduleDir, '../data/store.json');
+  process.env.DATA_FILE ?? path.resolve(moduleDir, "../data/store.json");
 
 interface Persisted {
   schemas: Schema[];
@@ -28,7 +28,7 @@ export class Store {
 
   load(): void {
     if (!fs.existsSync(this.filePath)) return;
-    const raw = fs.readFileSync(this.filePath, 'utf8');
+    const raw = fs.readFileSync(this.filePath, "utf8");
     const data = JSON.parse(raw) as Persisted;
     this.schemas = new Map(data.schemas.map((s) => [s.id, s]));
     this.entries = new Map(data.entries.map((e) => [e.id, e]));
@@ -124,7 +124,7 @@ export class Store {
     };
     fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
     const tmp = `${this.filePath}.tmp`;
-    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
+    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), "utf8");
     fs.renameSync(tmp, this.filePath); // atomic on the same filesystem
   }
 }

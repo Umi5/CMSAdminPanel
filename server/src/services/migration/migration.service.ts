@@ -1,9 +1,19 @@
-import type { Schema, Field, Entry, MigrationPlan, MigrationOverrides } from '@cms/shared';
-import { store } from '../../store';
-import { HttpError } from '../../http';
-import { validateEntryValues, type RefResolver } from '../../entry-validator';
-import { planMigration, computeMigratedValues, type RefExistsInTarget } from './planner';
-import type { DraftSchemaInput } from '../../validation/migration.validation';
+import type {
+  Schema,
+  Field,
+  Entry,
+  MigrationPlan,
+  MigrationOverrides,
+} from "@cms/shared";
+import { store } from "../../store";
+import { HttpError } from "../../http";
+import { validateEntryValues, type RefResolver } from "../../entry-validator";
+import {
+  planMigration,
+  computeMigratedValues,
+  type RefExistsInTarget,
+} from "./planner";
+import type { DraftSchemaInput } from "../../validation/migration.validation";
 
 const refExistsInTarget: RefExistsInTarget = (referenceSchemaId, entryId) => {
   const entry = store.getEntry(entryId);
@@ -23,8 +33,14 @@ function buildDraftSchema(current: Schema, input: DraftSchemaInput): Schema {
     createdAt: current.createdAt,
     updatedAt: current.updatedAt,
     fields: input.fields.map((f): Field => {
-      const field: Field = { id: f.id, name: f.name, type: f.type, required: f.required };
-      if (f.type === 'reference' && f.referenceSchemaId) field.referenceSchemaId = f.referenceSchemaId;
+      const field: Field = {
+        id: f.id,
+        name: f.name,
+        type: f.type,
+        required: f.required,
+      };
+      if (f.type === "reference" && f.referenceSchemaId)
+        field.referenceSchemaId = f.referenceSchemaId;
       return field;
     }),
   };
@@ -34,30 +50,39 @@ function validateDraftStructure(draft: Schema, current: Schema): void {
   const ids = new Set<string>();
   const names = new Set<string>();
   for (const field of draft.fields) {
-    if (ids.has(field.id)) throw new HttpError(400, `Duplicate field id '${field.id}'`);
+    if (ids.has(field.id))
+      throw new HttpError(400, `Duplicate field id '${field.id}'`);
     ids.add(field.id);
 
     const nameKey = field.name.trim().toLowerCase();
-    if (names.has(nameKey)) throw new HttpError(400, `Duplicate field name '${field.name}'`);
+    if (names.has(nameKey))
+      throw new HttpError(400, `Duplicate field name '${field.name}'`);
     names.add(nameKey);
 
-    if (field.type === 'reference') {
+    if (field.type === "reference") {
       const target = field.referenceSchemaId;
       // Self-reference is allowed (target === current.id).
       if (!target || (target !== current.id && !store.getSchema(target))) {
-        throw new HttpError(400, `Reference field '${field.name}' points to a content type that does not exist`);
+        throw new HttpError(
+          400,
+          `Reference field '${field.name}' points to a content type that does not exist`,
+        );
       }
     }
   }
   if (draft.apiId !== current.apiId) {
-    const taken = store.listSchemas().filter((s) => s.id !== current.id).map((s) => s.apiId);
-    if (taken.includes(draft.apiId)) throw new HttpError(400, `apiId '${draft.apiId}' is already in use`);
+    const taken = store
+      .listSchemas()
+      .filter((s) => s.id !== current.id)
+      .map((s) => s.apiId);
+    if (taken.includes(draft.apiId))
+      throw new HttpError(400, `apiId '${draft.apiId}' is already in use`);
   }
 }
 
 function currentOrThrow(schemaId: string): Schema {
   const current = store.getSchema(schemaId);
-  if (!current) throw new HttpError(404, 'Content type not found');
+  if (!current) throw new HttpError(404, "Content type not found");
   return current;
 }
 
@@ -67,7 +92,12 @@ export const migrationService = {
     const current = currentOrThrow(schemaId);
     const draft = buildDraftSchema(current, input);
     validateDraftStructure(draft, current);
-    return planMigration(current, draft, store.listEntries(schemaId), refExistsInTarget);
+    return planMigration(
+      current,
+      draft,
+      store.listEntries(schemaId),
+      refExistsInTarget,
+    );
   },
 
   apply(
@@ -85,10 +115,14 @@ export const migrationService = {
 
     // The schema moved under us since the draft was planned.
     if (current.version !== basedOnVersion) {
-      throw new HttpError(409, 'This content type changed since you started editing', {
-        reason: 'stale',
-        plan: freshPlan,
-      });
+      throw new HttpError(
+        409,
+        "This content type changed since you started editing",
+        {
+          reason: "stale",
+          plan: freshPlan,
+        },
+      );
     }
 
     // Every flagged value must be addressed by an override (even an empty one, to
@@ -101,14 +135,19 @@ export const migrationService = {
         const addressed =
           entryOverrides !== undefined &&
           Object.prototype.hasOwnProperty.call(entryOverrides, change.fieldId);
-        if (!addressed) unresolved.push({ entryId: issue.entryId, fieldId: change.fieldId });
+        if (!addressed)
+          unresolved.push({ entryId: issue.entryId, fieldId: change.fieldId });
       }
     }
     if (unresolved.length > 0) {
-      throw new HttpError(409, 'Some values still need attention before this can be applied', {
-        reason: 'unresolved',
-        plan: freshPlan,
-      });
+      throw new HttpError(
+        409,
+        "Some values still need attention before this can be applied",
+        {
+          reason: "unresolved",
+          plan: freshPlan,
+        },
+      );
     }
 
     // Build the migrated entries and re-validate them against the draft. This is
@@ -116,18 +155,34 @@ export const migrationService = {
     const now = new Date().toISOString();
     const migrated: Entry[] = entries.map((entry) => ({
       ...entry,
-      values: computeMigratedValues(current, draft, entry, overrides[entry.id], refExistsInTarget),
+      values: computeMigratedValues(
+        current,
+        draft,
+        entry,
+        overrides[entry.id],
+        refExistsInTarget,
+      ),
       updatedAt: now,
     }));
 
     const invalid = migrated
-      .map((entry) => ({ entryId: entry.id, errors: validateEntryValues(draft, entry.values, refResolver) }))
+      .map((entry) => ({
+        entryId: entry.id,
+        errors: validateEntryValues(draft, entry.values, refResolver),
+      }))
       .filter((result) => result.errors.length > 0);
     if (invalid.length > 0) {
-      throw new HttpError(400, 'Some corrected values are still invalid', { reason: 'invalid', invalid });
+      throw new HttpError(400, "Some corrected values are still invalid", {
+        reason: "invalid",
+        invalid,
+      });
     }
 
-    const newSchema: Schema = { ...draft, version: current.version + 1, updatedAt: now };
+    const newSchema: Schema = {
+      ...draft,
+      version: current.version + 1,
+      updatedAt: now,
+    };
     store.transaction(() => {
       store.replaceSchema(newSchema);
       for (const entry of migrated) store.replaceEntry(entry);

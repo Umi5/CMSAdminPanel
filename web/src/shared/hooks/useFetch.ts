@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { api, ApiError } from '@/shared/api/client';
+import { useCallback, useEffect, useState } from "react";
+import { api, ApiError } from "@/shared/api/client";
 
 interface FetchState<T> {
   data: T | null;
@@ -25,7 +25,7 @@ export function useFetch<T>(path: string | null): FetchState<T> {
       setData(await api.get<T>(path));
       setError(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to load');
+      setError(err instanceof ApiError ? err.message : "Failed to load");
     } finally {
       setLoading(false);
     }

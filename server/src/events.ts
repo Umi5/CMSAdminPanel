@@ -1,5 +1,5 @@
-import { EventEmitter } from 'node:events';
-import type { ServerEvent } from '@cms/shared';
+import { EventEmitter } from "node:events";
+import type { ServerEvent } from "@cms/shared";
 
 /**
  * A single in-process pub/sub hub. Controllers call `broadcast()` after a
@@ -7,7 +7,7 @@ import type { ServerEvent } from '@cms/shared';
  */
 class EventBus extends EventEmitter {
   broadcast(event: ServerEvent): void {
-    this.emit('event', event);
+    this.emit("event", event);
   }
 }
 

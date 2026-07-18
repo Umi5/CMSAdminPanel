@@ -1,17 +1,31 @@
-import { Box, FormControlLabel, IconButton, MenuItem, Switch, TextField, Tooltip } from '@mui/material';
-import ArrowUpwardRoundedIcon from '@mui/icons-material/ArrowUpwardRounded';
-import ArrowDownwardRoundedIcon from '@mui/icons-material/ArrowDownwardRounded';
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import type { FieldType, Schema } from '@cms/shared';
-import type { DraftField } from '../hooks/useSchemaDraft';
+import {
+  Box,
+  FormControlLabel,
+  IconButton,
+  MenuItem,
+  Switch,
+  TextField,
+  Tooltip,
+} from "@mui/material";
+import ArrowUpwardRoundedIcon from "@mui/icons-material/ArrowUpwardRounded";
+import ArrowDownwardRoundedIcon from "@mui/icons-material/ArrowDownwardRounded";
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import type { FieldType, Schema } from "@cms/shared";
+import type { DraftField } from "../hooks/useSchemaDraft";
 
-const FIELD_TYPES: FieldType[] = ['text', 'number', 'boolean', 'date', 'reference'];
+const FIELD_TYPES: FieldType[] = [
+  "text",
+  "number",
+  "boolean",
+  "date",
+  "reference",
+];
 const TYPE_LABEL: Record<FieldType, string> = {
-  text: 'Text',
-  number: 'Number',
-  boolean: 'Boolean',
-  date: 'Date',
-  reference: 'Reference',
+  text: "Text",
+  number: "Number",
+  boolean: "Boolean",
+  date: "Date",
+  reference: "Reference",
 };
 
 export function FieldEditor({
@@ -36,8 +50,11 @@ export function FieldEditor({
   onMove: (index: number, dir: -1 | 1) => void;
 }) {
   const handleType = (type: FieldType) => {
-    if (type === 'reference') {
-      onChange({ type, referenceSchemaId: field.referenceSchemaId ?? schemas[0]?.id });
+    if (type === "reference") {
+      onChange({
+        type,
+        referenceSchemaId: field.referenceSchemaId ?? schemas[0]?.id,
+      });
     } else {
       onChange({ type });
     }
@@ -46,8 +63,25 @@ export function FieldEditor({
   return (
     <Box
       className="flex flex-wrap items-start gap-3 px-4 py-3"
-      sx={index > 0 ? { borderTop: 1, borderColor: 'divider' } : undefined}
+      sx={{
+        transition: "background-color 120ms ease",
+        "&:hover": { bgcolor: "action.hover" },
+        ...(index > 0 ? { borderTop: 1, borderColor: "divider" } : {}),
+      }}
     >
+      <Box
+        sx={{
+          mt: 1.25,
+          width: 20,
+          flexShrink: 0,
+          textAlign: "right",
+          color: "text.disabled",
+          fontSize: 12,
+          fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+        }}
+      >
+        {index + 1}
+      </Box>
       <Box className="flex-1" sx={{ minWidth: 180 }}>
         <TextField
           label="Field name"
@@ -75,12 +109,12 @@ export function FieldEditor({
         ))}
       </TextField>
 
-      {field.type === 'reference' && (
+      {field.type === "reference" && (
         <TextField
           select
           label="References"
           size="small"
-          value={field.referenceSchemaId ?? ''}
+          value={field.referenceSchemaId ?? ""}
           onChange={(e) => onChange({ referenceSchemaId: e.target.value })}
           sx={{ minWidth: 170 }}
           error={!field.referenceSchemaId}
@@ -93,14 +127,19 @@ export function FieldEditor({
           {schemas.map((schema) => (
             <MenuItem key={schema.id} value={schema.id}>
               {schema.name}
-              {schema.id === currentSchemaId ? ' (self)' : ''}
+              {schema.id === currentSchemaId ? " (self)" : ""}
             </MenuItem>
           ))}
         </TextField>
       )}
 
       <FormControlLabel
-        control={<Switch checked={field.required} onChange={(e) => onChange({ required: e.target.checked })} />}
+        control={
+          <Switch
+            checked={field.required}
+            onChange={(e) => onChange({ required: e.target.checked })}
+          />
+        }
         label="Required"
         sx={{ mr: 0 }}
       />
@@ -108,7 +147,12 @@ export function FieldEditor({
       <Box className="flex items-center">
         <Tooltip title="Move up">
           <span>
-            <IconButton size="small" disabled={index === 0} onClick={() => onMove(index, -1)} aria-label="Move field up">
+            <IconButton
+              size="small"
+              disabled={index === 0}
+              onClick={() => onMove(index, -1)}
+              aria-label="Move field up"
+            >
               <ArrowUpwardRoundedIcon fontSize="small" />
             </IconButton>
           </span>
@@ -126,7 +170,12 @@ export function FieldEditor({
           </span>
         </Tooltip>
         <Tooltip title="Remove field">
-          <IconButton size="small" color="error" onClick={onRemove} aria-label="Remove field">
+          <IconButton
+            size="small"
+            color="error"
+            onClick={onRemove}
+            aria-label="Remove field"
+          >
             <DeleteOutlineRoundedIcon fontSize="small" />
           </IconButton>
         </Tooltip>

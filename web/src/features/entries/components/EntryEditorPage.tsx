@@ -1,21 +1,21 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Alert, Box, Button } from '@mui/material';
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import type { Entry, Schema } from '@cms/shared';
-import { ApiError } from '@/shared/api/client';
-import { useSchemas } from '@/shared/schema/SchemaProvider';
-import { useToast } from '@/shared/toast/ToastProvider';
-import { useFetch } from '@/shared/hooks/useFetch';
-import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
-import { useSchemaEvents } from '@/shared/hooks/useSchemaEvents';
-import { PageHeader } from '@/shared/components/PageHeader';
-import { LoadingState, EmptyState } from '@/shared/components/StateViews';
-import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
-import { EntryForm } from './EntryForm';
-import { entriesApi } from '../api/entries.api';
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Alert, Box, Button } from "@mui/material";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import type { Entry, Schema } from "@cms/shared";
+import { ApiError } from "@/shared/api/client";
+import { useSchemas } from "@/shared/schema/SchemaProvider";
+import { useToast } from "@/shared/toast/ToastProvider";
+import { useFetch } from "@/shared/hooks/useFetch";
+import { useDocumentTitle } from "@/shared/hooks/useDocumentTitle";
+import { useSchemaEvents } from "@/shared/hooks/useSchemaEvents";
+import { PageHeader } from "@/shared/components/PageHeader";
+import { LoadingState, EmptyState } from "@/shared/components/StateViews";
+import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
+import { EntryForm } from "./EntryForm";
+import { entriesApi } from "../api/entries.api";
 
 export function EntryEditorPage() {
   const { schemaId, entryId } = useParams();
@@ -26,27 +26,33 @@ export function EntryEditorPage() {
   const liveSchema = schemaId ? getSchema(schemaId) : undefined;
   const listPath = `/schemas/${schemaId}`;
 
-  const { data: entry, loading: entryLoading, refetch: refetchEntry } = useFetch<Entry>(
+  const {
+    data: entry,
+    loading: entryLoading,
+    refetch: refetchEntry,
+  } = useFetch<Entry>(
     isEdit && schemaId ? `/schemas/${schemaId}/entries/${entryId}` : null,
   );
 
   // Pin the schema the form opened against. A migration applied elsewhere updates
   // the live schema, but we keep the form frozen on the pinned one and surface a
   // banner — so fields never rearrange under the user mid-edit.
-  const [pinnedSchema, setPinnedSchema] = useState<Schema | undefined>(() => liveSchema);
+  const [pinnedSchema, setPinnedSchema] = useState<Schema | undefined>(
+    () => liveSchema,
+  );
   useEffect(() => {
     setPinnedSchema((prev) => prev ?? liveSchema);
   }, [liveSchema]);
   const [schemaChanged, setSchemaChanged] = useState(false);
 
   useSchemaEvents(schemaId ?? null, (event) => {
-    if (event.type === 'schema.updated') setSchemaChanged(true);
-    if (event.type === 'schema.deleted') {
-      showToast('This content type was deleted', 'info');
-      navigate('/schemas');
+    if (event.type === "schema.updated") setSchemaChanged(true);
+    if (event.type === "schema.deleted") {
+      showToast("This content type was deleted", "info");
+      navigate("/schemas");
     }
-    if (event.type === 'entry.deleted' && event.entryId === entryId) {
-      showToast('This entry was deleted', 'info');
+    if (event.type === "entry.deleted" && event.entryId === entryId) {
+      showToast("This entry was deleted", "info");
       navigate(listPath);
     }
   });
@@ -54,7 +60,7 @@ export function EntryEditorPage() {
   const [saving, setSaving] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  useDocumentTitle(isEdit ? 'Edit entry' : 'New entry');
+  useDocumentTitle(isEdit ? "Edit entry" : "New entry");
 
   if (schemasLoading && !liveSchema) return <LoadingState />;
   if (!liveSchema) {
@@ -62,7 +68,7 @@ export function EntryEditorPage() {
       <EmptyState
         title="Content type not found"
         action={
-          <Button variant="contained" onClick={() => navigate('/schemas')}>
+          <Button variant="contained" onClick={() => navigate("/schemas")}>
             Back to content types
           </Button>
         }
@@ -99,14 +105,17 @@ export function EntryEditorPage() {
     try {
       if (isEdit && entryId) {
         await entriesApi.update(schemaId, entryId, values);
-        showToast('Entry saved');
+        showToast("Entry saved", "info");
       } else {
         await entriesApi.create(schemaId, values);
-        showToast('Entry created');
+        showToast("Entry created", "success");
       }
       navigate(listPath);
     } catch (err) {
-      showToast(err instanceof ApiError ? err.message : 'Failed to save entry', 'error');
+      showToast(
+        err instanceof ApiError ? err.message : "Failed to save entry",
+        "error",
+      );
       setSaving(false);
     }
   };
@@ -116,10 +125,13 @@ export function EntryEditorPage() {
     setDeleting(true);
     try {
       await entriesApi.remove(schemaId, entryId);
-      showToast('Entry deleted');
+      showToast("Entry deleted", "error");
       navigate(listPath);
     } catch (err) {
-      showToast(err instanceof ApiError ? err.message : 'Failed to delete entry', 'error');
+      showToast(
+        err instanceof ApiError ? err.message : "Failed to delete entry",
+        "error",
+      );
       setDeleting(false);
       setConfirmOpen(false);
     }
@@ -136,7 +148,11 @@ export function EntryEditorPage() {
       >
         {schema.name} entries
       </Button>
-      <PageHeader title={isEdit ? `Edit ${schema.name} entry` : `New ${schema.name} entry`} />
+      <PageHeader
+        title={
+          isEdit ? `Edit ${schema.name} entry` : `New ${schema.name} entry`
+        }
+      />
 
       {schemaChanged && (
         <Alert
@@ -153,17 +169,17 @@ export function EntryEditorPage() {
             </Button>
           }
         >
-          This content type changed while you were editing. Reload to continue with the latest
-          fields — unsaved changes will be lost.
+          This content type changed while you were editing. Reload to continue
+          with the latest fields — unsaved changes will be lost.
         </Alert>
       )}
 
       <EntryForm
-        key={`${entry?.id ?? 'new'}:${entry?.updatedAt ?? ''}:${schema.version}`}
+        key={`${entry?.id ?? "new"}:${entry?.updatedAt ?? ""}:${schema.version}`}
         schema={schema}
         initialValues={initialValues}
         saving={saving}
-        submitLabel={isEdit ? 'Save changes' : 'Create entry'}
+        submitLabel={isEdit ? "Save changes" : "Create entry"}
         onSubmit={submit}
         onCancel={() => navigate(listPath)}
         extraActions={

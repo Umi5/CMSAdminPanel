@@ -1,20 +1,33 @@
-import { Chip } from '@mui/material';
-import type { Severity } from '@cms/shared';
+import { Chip, useTheme } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import type { Severity } from "@cms/shared";
 
-const STYLES: Record<Severity, { label: string; color: string; bg: string }> = {
-  safe: { label: 'Safe', color: '#166534', bg: '#dcfce7' },
-  warning: { label: 'Warning', color: '#92400e', bg: '#fef3c7' },
-  risky: { label: 'Risky', color: '#9a3412', bg: '#ffedd5' },
-  destructive: { label: 'Destructive', color: '#991b1b', bg: '#fee2e2' },
+const LABEL: Record<Severity, string> = {
+  safe: "Safe",
+  warning: "Warning",
+  risky: "Risky",
+  destructive: "Destructive",
 };
 
 export function SeverityChip({ severity }: { severity: Severity }) {
-  const style = STYLES[severity];
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+  const base: Record<Severity, string> = {
+    safe: theme.palette.success.main,
+    warning: theme.palette.warning.main,
+    risky: isDark ? "#fb923c" : "#ea580c",
+    destructive: theme.palette.error.main,
+  };
+  const color = base[severity];
   return (
     <Chip
       size="small"
-      label={style.label}
-      sx={{ bgcolor: style.bg, color: style.color, fontWeight: 700 }}
+      label={LABEL[severity]}
+      sx={{
+        bgcolor: alpha(color, isDark ? 0.22 : 0.14),
+        color,
+        fontWeight: 600,
+      }}
     />
   );
 }

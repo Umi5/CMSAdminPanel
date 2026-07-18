@@ -1,5 +1,5 @@
-import type { Schema, Entry } from '@cms/shared';
-import { store } from '../store';
+import type { Schema, Entry } from "@cms/shared";
+import { store } from "../store";
 
 /** Read-API shape: values keyed by current field NAME, nested under `data` so a
  * field can safely be called "id" without clashing with the entry's own id. */
@@ -28,7 +28,9 @@ export function toPublicEntry(schema: Schema, entry: Entry): PublicEntry {
 
 export const contentService = {
   list(schema: Schema): PublicEntry[] {
-    return store.listEntries(schema.id).map((entry) => toPublicEntry(schema, entry));
+    return store
+      .listEntries(schema.id)
+      .map((entry) => toPublicEntry(schema, entry));
   },
 
   get(schema: Schema, entryId: string): PublicEntry | undefined {

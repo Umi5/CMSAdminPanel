@@ -71,7 +71,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         className="flex-1 min-w-0"
         sx={{ pt: isMobile ? 6 : 0 }}
       >
-        <Box className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8">
+        <Box className="mx-auto w-full max-w-5xl px-6 py-10 sm:px-10">
           {children}
         </Box>
       </Box>

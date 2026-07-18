@@ -124,10 +124,17 @@ export function createAppTheme(mode: PaletteMode) {
       MuiChip: { styleOverrides: { root: { fontWeight: 500 } } },
       MuiListItemButton: {
         styleOverrides: {
-          root: {
+          root: ({ theme }) => ({
             borderRadius: 6,
-            "&.Mui-selected .MuiListItemText-primary": { color: "inherit" },
-          },
+            "&.Mui-selected": {
+              color: theme.palette.primary.main,
+              "& .MuiListItemText-primary": {
+                color: "inherit",
+                fontWeight: 600,
+              },
+              "& .MuiListItemIcon-root": { color: "inherit" },
+            },
+          }),
         },
       },
       MuiTooltip: { styleOverrides: { tooltip: { fontSize: "0.75rem" } } },

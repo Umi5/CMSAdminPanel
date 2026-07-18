@@ -6,7 +6,7 @@
 
 // --- Content model ---
 
-export type FieldType = 'text' | 'number' | 'boolean' | 'date' | 'reference';
+export type FieldType = "text" | "number" | "boolean" | "date" | "reference";
 
 export interface Field {
   id: string;
@@ -44,13 +44,13 @@ export interface Entry {
 // --- Migration contract ---
 
 export type ChangeKind =
-  | 'field_added'
-  | 'field_removed'
-  | 'field_renamed'
-  | 'field_retyped'
-  | 'required_enabled'
-  | 'required_disabled'
-  | 'reference_retargeted';
+  | "field_added"
+  | "field_removed"
+  | "field_renamed"
+  | "field_retyped"
+  | "required_enabled"
+  | "required_disabled"
+  | "reference_retargeted";
 
 /**
  * How dangerous a change is to existing data:
@@ -59,7 +59,7 @@ export type ChangeKind =
  * - risky: per-value conversion that can fail (text→number on "vintage")
  * - destructive: data is dropped or references dangle (delete-with-data, retarget)
  */
-export type Severity = 'safe' | 'warning' | 'risky' | 'destructive';
+export type Severity = "safe" | "warning" | "risky" | "destructive";
 
 export interface ValueIssue {
   entryId: string;
@@ -103,9 +103,9 @@ export type EntryCounts = Record<string, number>;
 // --- Real-time events (server -> client over SSE) ---
 
 export type ServerEvent =
-  | { type: 'schema.created'; schema: Schema }
-  | { type: 'schema.updated'; schema: Schema }
-  | { type: 'schema.deleted'; schemaId: string }
-  | { type: 'entry.created'; entry: Entry }
-  | { type: 'entry.updated'; entry: Entry }
-  | { type: 'entry.deleted'; schemaId: string; entryId: string };
+  | { type: "schema.created"; schema: Schema }
+  | { type: "schema.updated"; schema: Schema }
+  | { type: "schema.deleted"; schemaId: string }
+  | { type: "entry.created"; entry: Entry }
+  | { type: "entry.updated"; entry: Entry }
+  | { type: "entry.deleted"; schemaId: string; entryId: string };

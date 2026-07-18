@@ -7,14 +7,21 @@ import type {
   MigrationPlan,
   ValueIssue,
   Severity,
-} from '@cms/shared';
-import { isEmpty } from '../../entry-validator';
-import { convert, retypeBaseSeverity, maxSeverity } from './converters';
+} from "@cms/shared";
+import { isEmpty } from "../../entry-validator";
+import { convert, retypeBaseSeverity, maxSeverity } from "./converters";
 
 /** Whether `entryId` exists inside `referenceSchemaId` — used to judge reference validity. */
-export type RefExistsInTarget = (referenceSchemaId: string, entryId: string) => boolean;
+export type RefExistsInTarget = (
+  referenceSchemaId: string,
+  entryId: string,
+) => boolean;
 
-function base(field: Field, changeKind: ChangeKind, severity: Severity): FieldChange {
+function base(
+  field: Field,
+  changeKind: ChangeKind,
+  severity: Severity,
+): FieldChange {
   return {
     fieldId: field.id,
     fieldName: field.name,
@@ -27,60 +34,83 @@ function base(field: Field, changeKind: ChangeKind, severity: Severity): FieldCh
 }
 
 function renamedChange(draftField: Field): FieldChange {
-  return base(draftField, 'field_renamed', 'safe');
+  return base(draftField, "field_renamed", "safe");
 }
 
 function requiredDisabledChange(draftField: Field): FieldChange {
-  return base(draftField, 'required_disabled', 'safe');
+  return base(draftField, "required_disabled", "safe");
 }
 
-function requiredEnabledChange(draftField: Field, entries: Entry[]): FieldChange {
+function requiredEnabledChange(
+  draftField: Field,
+  entries: Entry[],
+): FieldChange {
   const needsAttention: ValueIssue[] = [];
   for (const entry of entries) {
     if (isEmpty(entry.values[draftField.id])) {
-      needsAttention.push({ entryId: entry.id, currentValue: null, reason: 'is now required but empty' });
+      needsAttention.push({
+        entryId: entry.id,
+        currentValue: null,
+        reason: "is now required but empty",
+      });
     }
   }
   return {
-    ...base(draftField, 'required_enabled', needsAttention.length > 0 ? 'warning' : 'safe'),
+    ...base(
+      draftField,
+      "required_enabled",
+      needsAttention.length > 0 ? "warning" : "safe",
+    ),
     affectedCount: needsAttention.length,
     needsAttention,
   };
 }
 
 function addedChange(draftField: Field, entries: Entry[]): FieldChange {
-  if (!draftField.required) return base(draftField, 'field_added', 'safe');
+  if (!draftField.required) return base(draftField, "field_added", "safe");
   const needsAttention: ValueIssue[] = entries.map((entry) => ({
     entryId: entry.id,
     currentValue: null,
-    reason: 'new required field needs a value',
+    reason: "new required field needs a value",
   }));
   return {
-    ...base(draftField, 'field_added', needsAttention.length > 0 ? 'warning' : 'safe'),
+    ...base(
+      draftField,
+      "field_added",
+      needsAttention.length > 0 ? "warning" : "safe",
+    ),
     affectedCount: needsAttention.length,
     needsAttention,
   };
 }
 
-function retypedChange(currentField: Field, draftField: Field, entries: Entry[]): FieldChange {
+function retypedChange(
+  currentField: Field,
+  draftField: Field,
+  entries: Entry[],
+): FieldChange {
   const needsAttention: ValueIssue[] = [];
   let cleanCount = 0;
   for (const entry of entries) {
     const value = entry.values[currentField.id];
     if (isEmpty(value)) continue;
     const result = convert(value, currentField.type, draftField.type);
-    if (result.status === 'clean') {
+    if (result.status === "clean") {
       cleanCount += 1;
     } else {
-      needsAttention.push({ entryId: entry.id, currentValue: value, reason: result.reason });
+      needsAttention.push({
+        entryId: entry.id,
+        currentValue: value,
+        reason: result.reason,
+      });
     }
   }
   const severity = maxSeverity(
     retypeBaseSeverity(currentField.type, draftField.type),
-    needsAttention.length > 0 ? 'risky' : 'safe',
+    needsAttention.length > 0 ? "risky" : "safe",
   );
   return {
-    ...base(draftField, 'field_retyped', severity),
+    ...base(draftField, "field_retyped", severity),
     affectedCount: cleanCount + needsAttention.length,
     cleanCount,
     needsAttention,
@@ -98,18 +128,22 @@ function retargetedChange(
   for (const entry of entries) {
     const value = entry.values[draftField.id];
     if (isEmpty(value)) continue;
-    if (target && typeof value === 'string' && refExists(target, value)) {
+    if (target && typeof value === "string" && refExists(target, value)) {
       cleanCount += 1;
     } else {
       needsAttention.push({
         entryId: entry.id,
         currentValue: value,
-        reason: 'no longer points to a valid entry in the new target',
+        reason: "no longer points to a valid entry in the new target",
       });
     }
   }
   return {
-    ...base(draftField, 'reference_retargeted', needsAttention.length > 0 ? 'destructive' : 'warning'),
+    ...base(
+      draftField,
+      "reference_retargeted",
+      needsAttention.length > 0 ? "destructive" : "warning",
+    ),
     affectedCount: cleanCount + needsAttention.length,
     cleanCount,
     needsAttention,
@@ -117,9 +151,15 @@ function retargetedChange(
 }
 
 function removedChange(currentField: Field, entries: Entry[]): FieldChange {
-  const withData = entries.filter((entry) => !isEmpty(entry.values[currentField.id]));
+  const withData = entries.filter(
+    (entry) => !isEmpty(entry.values[currentField.id]),
+  );
   return {
-    ...base(currentField, 'field_removed', withData.length > 0 ? 'destructive' : 'safe'),
+    ...base(
+      currentField,
+      "field_removed",
+      withData.length > 0 ? "destructive" : "safe",
+    ),
     affectedCount: withData.length,
   };
 }
@@ -156,7 +196,7 @@ export function planMigration(
     if (currentField.type !== draftField.type) {
       changes.push(retypedChange(currentField, draftField, entries));
     } else if (
-      draftField.type === 'reference' &&
+      draftField.type === "reference" &&
       currentField.referenceSchemaId !== draftField.referenceSchemaId
     ) {
       changes.push(retargetedChange(draftField, entries, refExistsInTarget));
@@ -169,8 +209,16 @@ export function planMigration(
     }
   }
 
-  const totalNeedsAttention = changes.reduce((sum, c) => sum + c.needsAttention.length, 0);
-  return { schemaId: current.id, basedOnVersion: current.version, changes, totalNeedsAttention };
+  const totalNeedsAttention = changes.reduce(
+    (sum, c) => sum + c.needsAttention.length,
+    0,
+  );
+  return {
+    schemaId: current.id,
+    basedOnVersion: current.version,
+    changes,
+    totalNeedsAttention,
+  };
 }
 
 /**
@@ -203,14 +251,19 @@ export function computeMigratedValues(
 
     if (currentField.type !== field.type) {
       const result = convert(value, currentField.type, field.type);
-      if (result.status === 'clean' && !isEmpty(result.value)) out[field.id] = result.value;
+      if (result.status === "clean" && !isEmpty(result.value))
+        out[field.id] = result.value;
       continue;
     }
     if (
-      field.type === 'reference' &&
+      field.type === "reference" &&
       currentField.referenceSchemaId !== field.referenceSchemaId
     ) {
-      if (field.referenceSchemaId && typeof value === 'string' && refExistsInTarget(field.referenceSchemaId, value)) {
+      if (
+        field.referenceSchemaId &&
+        typeof value === "string" &&
+        refExistsInTarget(field.referenceSchemaId, value)
+      ) {
         out[field.id] = value;
       }
       continue;

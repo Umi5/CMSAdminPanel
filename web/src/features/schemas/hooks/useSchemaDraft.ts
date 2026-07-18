@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import type { FieldType, Schema } from '@cms/shared';
+import { useCallback, useState } from "react";
+import type { FieldType, Schema } from "@cms/shared";
 
 export interface DraftField {
   id: string;
@@ -17,7 +17,7 @@ export interface SchemaDraftPayload {
 }
 
 export function newDraftField(): DraftField {
-  return { id: crypto.randomUUID(), name: '', type: 'text', required: false };
+  return { id: crypto.randomUUID(), name: "", type: "text", required: false };
 }
 
 /** Load an existing schema into an editable draft. */
@@ -30,14 +30,22 @@ export function schemaToDraft(schema: Schema): SchemaDraftPayload {
       name: f.name,
       type: f.type,
       required: f.required,
-      ...(f.referenceSchemaId ? { referenceSchemaId: f.referenceSchemaId } : {}),
+      ...(f.referenceSchemaId
+        ? { referenceSchemaId: f.referenceSchemaId }
+        : {}),
     })),
   };
 }
 
 function cleanField(field: DraftField): DraftField {
-  const base: DraftField = { id: field.id, name: field.name.trim(), type: field.type, required: field.required };
-  if (field.type === 'reference' && field.referenceSchemaId) base.referenceSchemaId = field.referenceSchemaId;
+  const base: DraftField = {
+    id: field.id,
+    name: field.name.trim(),
+    type: field.type,
+    required: field.required,
+  };
+  if (field.type === "reference" && field.referenceSchemaId)
+    base.referenceSchemaId = field.referenceSchemaId;
   return base;
 }
 
@@ -48,19 +56,24 @@ export interface DraftErrors {
   hasErrors: boolean;
 }
 
-export function validateDraft(name: string, apiId: string, fields: DraftField[]): DraftErrors {
+export function validateDraft(
+  name: string,
+  apiId: string,
+  fields: DraftField[],
+): DraftErrors {
   const errors: DraftErrors = { fields: {}, hasErrors: false };
-  if (!name.trim()) errors.name = 'Name is required';
-  if (!apiId.trim()) errors.apiId = 'API id is required';
-  else if (!/^[a-z0-9-]+$/.test(apiId)) errors.apiId = 'Only lowercase letters, numbers and hyphens';
+  if (!name.trim()) errors.name = "Name is required";
+  if (!apiId.trim()) errors.apiId = "API id is required";
+  else if (!/^[a-z0-9-]+$/.test(apiId))
+    errors.apiId = "Only lowercase letters, numbers and hyphens";
 
   const seen = new Set<string>();
   for (const field of fields) {
     const key = field.name.trim().toLowerCase();
-    if (!field.name.trim()) errors.fields[field.id] = 'Field name is required';
-    else if (seen.has(key)) errors.fields[field.id] = 'Duplicate field name';
-    else if (field.type === 'reference' && !field.referenceSchemaId)
-      errors.fields[field.id] = 'Pick a target content type';
+    if (!field.name.trim()) errors.fields[field.id] = "Field name is required";
+    else if (seen.has(key)) errors.fields[field.id] = "Duplicate field name";
+    else if (field.type === "reference" && !field.referenceSchemaId)
+      errors.fields[field.id] = "Pick a target content type";
     if (field.name.trim()) seen.add(key);
   }
 
@@ -78,14 +91,17 @@ export function useSchemaDraft(initial: SchemaDraftPayload) {
   const [apiId, setApiId] = useState(initial.apiId);
   const [fields, setFields] = useState<DraftField[]>(initial.fields);
 
-  const addField = useCallback(() => setFields((f) => [...f, newDraftField()]), []);
+  const addField = useCallback(
+    () => setFields((f) => [...f, newDraftField()]),
+    [],
+  );
 
   const updateField = useCallback((id: string, patch: Partial<DraftField>) => {
     setFields((current) =>
       current.map((field) => {
         if (field.id !== id) return field;
         const next: DraftField = { ...field, ...patch };
-        if (next.type !== 'reference') delete next.referenceSchemaId;
+        if (next.type !== "reference") delete next.referenceSchemaId;
         return next;
       }),
     );
@@ -110,9 +126,24 @@ export function useSchemaDraft(initial: SchemaDraftPayload) {
   }, []);
 
   const toPayload = useCallback(
-    (): SchemaDraftPayload => ({ name: name.trim(), apiId: apiId.trim(), fields: fields.map(cleanField) }),
+    (): SchemaDraftPayload => ({
+      name: name.trim(),
+      apiId: apiId.trim(),
+      fields: fields.map(cleanField),
+    }),
     [name, apiId, fields],
   );
 
-  return { name, setName, apiId, setApiId, fields, addField, updateField, removeField, moveField, toPayload };
+  return {
+    name,
+    setName,
+    apiId,
+    setApiId,
+    fields,
+    addField,
+    updateField,
+    removeField,
+    moveField,
+    toPayload,
+  };
 }

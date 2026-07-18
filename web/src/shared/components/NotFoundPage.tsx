@@ -1,6 +1,6 @@
-import { Button } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { EmptyState } from './StateViews';
+import { Button } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { EmptyState } from "./StateViews";
 
 export function NotFoundPage() {
   const navigate = useNavigate();
@@ -9,7 +9,7 @@ export function NotFoundPage() {
       title="Page not found"
       description="That page doesn’t exist."
       action={
-        <Button variant="contained" onClick={() => navigate('/schemas')}>
+        <Button variant="contained" onClick={() => navigate("/schemas")}>
           Back to content types
         </Button>
       }

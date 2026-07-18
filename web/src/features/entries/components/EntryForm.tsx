@@ -1,8 +1,14 @@
-import { useState, type ReactNode } from 'react';
-import { Box, Button, CircularProgress, Paper, Typography } from '@mui/material';
-import type { Schema } from '@cms/shared';
-import { FieldInput } from './FieldInput';
-import { validateEntry } from '../util/validateEntry';
+import { useState, type ReactNode } from "react";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Paper,
+  Typography,
+} from "@mui/material";
+import type { Schema } from "@cms/shared";
+import { FieldInput } from "./FieldInput";
+import { validateEntry } from "../util/validateEntry";
 
 export function EntryForm({
   schema,
@@ -25,7 +31,8 @@ export function EntryForm({
   const [submitted, setSubmitted] = useState(false);
   const errors = validateEntry(schema, values);
 
-  const setValue = (fieldId: string, value: unknown) => setValues((v) => ({ ...v, [fieldId]: value }));
+  const setValue = (fieldId: string, value: unknown) =>
+    setValues((v) => ({ ...v, [fieldId]: value }));
 
   const handleSubmit = () => {
     setSubmitted(true);
@@ -34,10 +41,12 @@ export function EntryForm({
   };
 
   return (
-    <Box>
-      <Paper variant="outlined" className="flex flex-col gap-4 p-5">
+    <Box className="max-w-2xl mx-auto">
+      <Paper variant="outlined" className="flex flex-col gap-5 p-6">
         {schema.fields.length === 0 ? (
-          <Typography color="text.secondary">This content type has no fields yet.</Typography>
+          <Typography color="text.secondary">
+            This content type has no fields yet.
+          </Typography>
         ) : (
           schema.fields.map((field) => (
             <FieldInput
@@ -51,7 +60,10 @@ export function EntryForm({
         )}
       </Paper>
 
-      <Box className="flex flex-wrap items-center justify-between gap-2 mt-5">
+      <Box
+        className="flex flex-wrap items-center justify-between gap-2 mt-4 pt-4"
+        sx={{ borderTop: 1, borderColor: "divider" }}
+      >
         <Box>{extraActions}</Box>
         <Box className="flex items-center gap-2">
           <Button color="inherit" onClick={onCancel} disabled={saving}>
@@ -61,7 +73,11 @@ export function EntryForm({
             variant="contained"
             onClick={handleSubmit}
             disabled={saving}
-            startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
+            startIcon={
+              saving ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : undefined
+            }
           >
             {submitLabel}
           </Button>

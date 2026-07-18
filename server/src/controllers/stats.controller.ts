@@ -1,6 +1,6 @@
-import type { Request, Response } from 'express';
-import type { EntryCounts } from '@cms/shared';
-import { store } from '../store';
+import type { Request, Response } from "express";
+import type { EntryCounts } from "@cms/shared";
+import { store } from "../store";
 
 export const statsController = {
   entryCounts(_req: Request, res: Response): void {

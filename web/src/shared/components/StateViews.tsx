@@ -1,24 +1,61 @@
-import { Box, Button, CircularProgress, Paper, Typography } from '@mui/material';
-import type { ReactNode } from 'react';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Paper,
+  Typography,
+} from "@mui/material";
+import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
+import type { ReactNode } from "react";
 
-export function LoadingState({ label = 'Loading…' }: { label?: string }) {
+export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
-    <Box className="flex flex-col items-center justify-center gap-3 py-20">
-      <CircularProgress size={26} />
-      <Typography color="text.secondary">{label}</Typography>
+    <Box className="flex flex-col items-center justify-center gap-3 py-16">
+      <CircularProgress size={22} thickness={4} />
+      <Typography variant="body2" color="text.secondary">
+        {label}
+      </Typography>
     </Box>
   );
 }
 
-export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+export function ErrorState({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry?: () => void;
+}) {
   return (
-    <Paper variant="outlined" className="flex flex-col items-center gap-3 px-8 py-10 text-center">
-      <Typography color="error" fontWeight={700}>
-        Something went wrong
+    <Paper
+      variant="outlined"
+      className="flex flex-col items-center gap-3 px-8 py-12 text-center"
+    >
+      <Box
+        sx={{
+          width: 48,
+          height: 48,
+          borderRadius: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "error.main",
+          bgcolor: (t) => `${t.palette.error.main}1f`,
+        }}
+      >
+        <ErrorOutlineRoundedIcon />
+      </Box>
+      <Typography variant="subtitle1">Something went wrong</Typography>
+      <Typography variant="body2" color="text.secondary" className="max-w-md">
+        {message}
       </Typography>
-      <Typography color="text.secondary">{message}</Typography>
       {onRetry && (
-        <Button variant="outlined" onClick={onRetry}>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={onRetry}
+          className="mt-1"
+        >
           Try again
         </Button>
       )}
@@ -38,11 +75,30 @@ export function EmptyState({
   icon?: ReactNode;
 }) {
   return (
-    <Paper variant="outlined" className="flex flex-col items-center gap-2 px-8 py-14 text-center">
-      {icon && <Box sx={{ color: 'text.disabled', mb: 1 }}>{icon}</Box>}
-      <Typography variant="h6">{title}</Typography>
+    <Paper
+      variant="outlined"
+      className="flex flex-col items-center gap-2 px-8 py-16 text-center"
+    >
+      {icon && (
+        <Box
+          sx={{
+            width: 52,
+            height: 52,
+            borderRadius: 2.5,
+            mb: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "text.secondary",
+            bgcolor: "action.hover",
+          }}
+        >
+          {icon}
+        </Box>
+      )}
+      <Typography variant="subtitle1">{title}</Typography>
       {description && (
-        <Typography color="text.secondary" className="max-w-md">
+        <Typography variant="body2" color="text.secondary" className="max-w-md">
           {description}
         </Typography>
       )}

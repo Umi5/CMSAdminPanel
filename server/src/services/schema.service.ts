@@ -1,17 +1,20 @@
-import type { Schema, Field } from '@cms/shared';
-import { store } from '../store';
-import { HttpError } from '../http';
-import { newId, slugify, uniqueSlug } from '../ids';
-import type { CreateSchemaInput, FieldInput } from '../validation/schema.validation';
+import type { Schema, Field } from "@cms/shared";
+import { store } from "../store";
+import { HttpError } from "../http";
+import { newId, slugify, uniqueSlug } from "../ids";
+import type {
+  CreateSchemaInput,
+  FieldInput,
+} from "../validation/schema.validation";
 
 function buildField(input: FieldInput): Field {
   const field: Field = {
-    id: input.id ?? newId('fld'),
+    id: input.id ?? newId("fld"),
     name: input.name,
     type: input.type,
     required: input.required,
   };
-  if (input.type === 'reference' && input.referenceSchemaId) {
+  if (input.type === "reference" && input.referenceSchemaId) {
     field.referenceSchemaId = input.referenceSchemaId;
   }
   return field;
@@ -30,9 +33,12 @@ function assertUniqueFieldNames(fields: readonly FieldInput[]): void {
 
 function assertReferenceTargetsExist(fields: readonly FieldInput[]): void {
   for (const field of fields) {
-    if (field.type !== 'reference') continue;
+    if (field.type !== "reference") continue;
     if (!field.referenceSchemaId || !store.getSchema(field.referenceSchemaId)) {
-      throw new HttpError(400, `Reference field '${field.name}' points to a content type that does not exist`);
+      throw new HttpError(
+        400,
+        `Reference field '${field.name}' points to a content type that does not exist`,
+      );
     }
   }
 }
@@ -44,7 +50,7 @@ export const schemaService = {
 
   get(id: string): Schema {
     const schema = store.getSchema(id);
-    if (!schema) throw new HttpError(404, 'Content type not found');
+    if (!schema) throw new HttpError(404, "Content type not found");
     return schema;
   },
 
@@ -63,7 +69,7 @@ export const schemaService = {
     const now = new Date().toISOString();
 
     const schema: Schema = {
-      id: newId('sch'),
+      id: newId("sch"),
       name: input.name,
       apiId,
       fields: input.fields.map(buildField),
@@ -76,7 +82,8 @@ export const schemaService = {
   },
 
   remove(id: string): void {
-    if (!store.getSchema(id)) throw new HttpError(404, 'Content type not found');
+    if (!store.getSchema(id))
+      throw new HttpError(404, "Content type not found");
     store.deleteSchemaCascade(id);
   },
 };

@@ -5,15 +5,15 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-} from '@mui/material';
-import type { ReactNode } from 'react';
+} from "@mui/material";
+import type { ReactNode } from "react";
 
 export function ConfirmDialog({
   open,
   title,
   message,
-  confirmLabel = 'Confirm',
-  confirmColor = 'primary',
+  confirmLabel = "Confirm",
+  confirmColor = "primary",
   busy = false,
   onConfirm,
   onClose,
@@ -22,22 +22,27 @@ export function ConfirmDialog({
   title: string;
   message: ReactNode;
   confirmLabel?: string;
-  confirmColor?: 'primary' | 'error';
+  confirmColor?: "primary" | "error";
   busy?: boolean;
   onConfirm: () => void;
   onClose: () => void;
 }) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>{title}</DialogTitle>
+      <DialogTitle sx={{ fontWeight: 600 }}>{title}</DialogTitle>
       <DialogContent>
-        <DialogContentText>{message}</DialogContentText>
+        <DialogContentText variant="body2">{message}</DialogContentText>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: 3, pb: 2.5 }}>
         <Button color="inherit" onClick={onClose} disabled={busy}>
           Cancel
         </Button>
-        <Button variant="contained" color={confirmColor} onClick={onConfirm} disabled={busy}>
+        <Button
+          variant="contained"
+          color={confirmColor}
+          onClick={onConfirm}
+          disabled={busy}
+        >
           {confirmLabel}
         </Button>
       </DialogActions>

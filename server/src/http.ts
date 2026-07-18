@@ -1,4 +1,4 @@
-import type { Request } from 'express';
+import type { Request } from "express";
 
 /** An error carrying an HTTP status; the error middleware turns it into a response. */
 export class HttpError extends Error {
@@ -8,7 +8,7 @@ export class HttpError extends Error {
     public readonly details?: unknown,
   ) {
     super(message);
-    this.name = 'HttpError';
+    this.name = "HttpError";
   }
 }
 
@@ -19,7 +19,7 @@ export class HttpError extends Error {
  */
 export function requireParam(req: Request, name: string): string {
   const value = req.params[name];
-  if (typeof value !== 'string') {
+  if (typeof value !== "string") {
     throw new HttpError(400, `Missing route parameter '${name}'`);
   }
   return value;

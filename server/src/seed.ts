@@ -1,47 +1,62 @@
-import type { Schema, Entry } from '@cms/shared';
-import type { Store } from './store';
+import type { Schema, Entry } from "@cms/shared";
+import type { Store } from "./store";
 
 // A fixed timestamp keeps seeded data reproducible across restarts.
-const TS = '2024-01-01T00:00:00.000Z';
+const TS = "2024-01-01T00:00:00.000Z";
 
 // Readable ids make the seed easy to follow. They're still opaque ids: renaming
 // a field never changes them — that's the whole point of keying values by id.
-const PRODUCER = 'sch_producer';
-const WINE = 'sch_wine';
+const PRODUCER = "sch_producer";
+const WINE = "sch_wine";
 
 const producerSchema: Schema = {
   id: PRODUCER,
-  name: 'Producer',
-  apiId: 'producer',
+  name: "Producer",
+  apiId: "producer",
   version: 1,
   createdAt: TS,
   updatedAt: TS,
   fields: [
-    { id: 'fld_prod_name', name: 'Name', type: 'text', required: true },
-    { id: 'fld_prod_country', name: 'Country', type: 'text', required: false },
-    { id: 'fld_prod_founded', name: 'Founded', type: 'number', required: false },
+    { id: "fld_prod_name", name: "Name", type: "text", required: true },
+    { id: "fld_prod_country", name: "Country", type: "text", required: false },
+    {
+      id: "fld_prod_founded",
+      name: "Founded",
+      type: "number",
+      required: false,
+    },
   ],
 };
 
 const wineSchema: Schema = {
   id: WINE,
-  name: 'Wine',
-  apiId: 'wine',
+  name: "Wine",
+  apiId: "wine",
   version: 1,
   createdAt: TS,
   updatedAt: TS,
   fields: [
-    { id: 'fld_wine_name', name: 'Name', type: 'text', required: true },
+    { id: "fld_wine_name", name: "Name", type: "text", required: true },
     // Intentionally TEXT, holding messy values — this is the hard-migration case:
     // retyping it to number must cope with "vintage", "n/a", and empty.
-    { id: 'fld_wine_year', name: 'Year', type: 'text', required: false },
-    { id: 'fld_wine_rating', name: 'Rating', type: 'number', required: false },
-    { id: 'fld_wine_stock', name: 'In Stock', type: 'boolean', required: false },
-    { id: 'fld_wine_release', name: 'Release Date', type: 'date', required: false },
+    { id: "fld_wine_year", name: "Year", type: "text", required: false },
+    { id: "fld_wine_rating", name: "Rating", type: "number", required: false },
     {
-      id: 'fld_wine_producer',
-      name: 'Producer',
-      type: 'reference',
+      id: "fld_wine_stock",
+      name: "In Stock",
+      type: "boolean",
+      required: false,
+    },
+    {
+      id: "fld_wine_release",
+      name: "Release Date",
+      type: "date",
+      required: false,
+    },
+    {
+      id: "fld_wine_producer",
+      name: "Producer",
+      type: "reference",
       required: false,
       referenceSchemaId: PRODUCER,
     },
@@ -50,23 +65,35 @@ const wineSchema: Schema = {
 
 const producerEntries: Entry[] = [
   {
-    id: 'ent_prod_margaux',
+    id: "ent_prod_margaux",
     schemaId: PRODUCER,
-    values: { fld_prod_name: 'Château Margaux', fld_prod_country: 'France', fld_prod_founded: 1815 },
+    values: {
+      fld_prod_name: "Château Margaux",
+      fld_prod_country: "France",
+      fld_prod_founded: 1815,
+    },
     createdAt: TS,
     updatedAt: TS,
   },
   {
-    id: 'ent_prod_penfolds',
+    id: "ent_prod_penfolds",
     schemaId: PRODUCER,
-    values: { fld_prod_name: 'Penfolds', fld_prod_country: 'Australia', fld_prod_founded: 1844 },
+    values: {
+      fld_prod_name: "Penfolds",
+      fld_prod_country: "Australia",
+      fld_prod_founded: 1844,
+    },
     createdAt: TS,
     updatedAt: TS,
   },
   {
-    id: 'ent_prod_opus',
+    id: "ent_prod_opus",
     schemaId: PRODUCER,
-    values: { fld_prod_name: 'Opus One', fld_prod_country: 'United States', fld_prod_founded: 1979 },
+    values: {
+      fld_prod_name: "Opus One",
+      fld_prod_country: "United States",
+      fld_prod_founded: 1979,
+    },
     createdAt: TS,
     updatedAt: TS,
   },
@@ -74,70 +101,70 @@ const producerEntries: Entry[] = [
 
 const wineEntries: Entry[] = [
   {
-    id: 'ent_wine_margaux15',
+    id: "ent_wine_margaux15",
     schemaId: WINE,
     values: {
-      fld_wine_name: 'Château Margaux 2015',
-      fld_wine_year: '2015',
+      fld_wine_name: "Château Margaux 2015",
+      fld_wine_year: "2015",
       fld_wine_rating: 98,
       fld_wine_stock: true,
-      fld_wine_release: '2018-03-01',
-      fld_wine_producer: 'ent_prod_margaux',
+      fld_wine_release: "2018-03-01",
+      fld_wine_producer: "ent_prod_margaux",
     },
     createdAt: TS,
     updatedAt: TS,
   },
   {
-    id: 'ent_wine_grange',
+    id: "ent_wine_grange",
     schemaId: WINE,
     values: {
-      fld_wine_name: 'Penfolds Grange',
-      fld_wine_year: 'vintage', // <- can't become a number without a fix
+      fld_wine_name: "Penfolds Grange",
+      fld_wine_year: "vintage", // <- can't become a number without a fix
       fld_wine_rating: 96,
       fld_wine_stock: false,
-      fld_wine_release: '2019-06-15',
-      fld_wine_producer: 'ent_prod_penfolds',
+      fld_wine_release: "2019-06-15",
+      fld_wine_producer: "ent_prod_penfolds",
     },
     createdAt: TS,
     updatedAt: TS,
   },
   {
-    id: 'ent_wine_opus_nv',
+    id: "ent_wine_opus_nv",
     schemaId: WINE,
     values: {
-      fld_wine_name: 'Opus One NV',
-      fld_wine_year: 'n/a', // <- can't become a number without a fix
+      fld_wine_name: "Opus One NV",
+      fld_wine_year: "n/a", // <- can't become a number without a fix
       fld_wine_rating: 93,
       fld_wine_stock: true,
-      fld_wine_release: '2020-01-20',
-      fld_wine_producer: 'ent_prod_opus',
+      fld_wine_release: "2020-01-20",
+      fld_wine_producer: "ent_prod_opus",
     },
     createdAt: TS,
     updatedAt: TS,
   },
   {
-    id: 'ent_wine_mystery',
+    id: "ent_wine_mystery",
     schemaId: WINE,
     values: {
-      fld_wine_name: 'Mystery Red',
-      fld_wine_year: '', // empty — no fix needed, just drops out
+      fld_wine_name: "Mystery Red",
+      fld_wine_year: "", // empty — no fix needed, just drops out
       fld_wine_rating: 88,
       fld_wine_stock: false,
-      fld_wine_producer: 'ent_prod_margaux',
+      fld_wine_producer: "ent_prod_margaux",
     },
     createdAt: TS,
     updatedAt: TS,
   },
   {
-    id: 'ent_wine_margaux16',
+    id: "ent_wine_margaux16",
     schemaId: WINE,
     values: {
-      fld_wine_name: 'Château Margaux 2016',
-      fld_wine_year: '2016',
+      fld_wine_name: "Château Margaux 2016",
+      fld_wine_year: "2016",
       fld_wine_rating: 97,
       fld_wine_stock: true,
-      fld_wine_release: '2019-04-01',
-      fld_wine_producer: 'ent_prod_margaux',
+      fld_wine_release: "2019-04-01",
+      fld_wine_producer: "ent_prod_margaux",
     },
     createdAt: TS,
     updatedAt: TS,

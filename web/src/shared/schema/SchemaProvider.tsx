@@ -1,7 +1,14 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { Schema } from '@cms/shared';
-import { api, ApiError } from '@/shared/api/client';
-import { useEvents } from '@/shared/realtime/EventsProvider';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+import type { Schema } from "@cms/shared";
+import { api, ApiError } from "@/shared/api/client";
+import { useEvents } from "@/shared/realtime/EventsProvider";
 
 interface SchemaContextValue {
   schemas: Schema[];
@@ -35,10 +42,12 @@ export function SchemaProvider({ children }: { children: ReactNode }) {
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      setSchemas(await api.get<Schema[]>('/schemas'));
+      setSchemas(await api.get<Schema[]>("/schemas"));
       setError(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to load content types');
+      setError(
+        err instanceof ApiError ? err.message : "Failed to load content types",
+      );
     } finally {
       setLoading(false);
     }
@@ -51,19 +60,27 @@ export function SchemaProvider({ children }: { children: ReactNode }) {
   useEffect(
     () =>
       subscribe((event) => {
-        if (event.type === 'schema.created' || event.type === 'schema.updated') {
+        if (
+          event.type === "schema.created" ||
+          event.type === "schema.updated"
+        ) {
           setSchemas((prev) => upsert(prev, event.schema));
-        } else if (event.type === 'schema.deleted') {
+        } else if (event.type === "schema.deleted") {
           setSchemas((prev) => prev.filter((s) => s.id !== event.schemaId));
         }
       }),
     [subscribe],
   );
 
-  const getSchema = useCallback((id: string) => schemas.find((s) => s.id === id), [schemas]);
+  const getSchema = useCallback(
+    (id: string) => schemas.find((s) => s.id === id),
+    [schemas],
+  );
 
   return (
-    <SchemaContext.Provider value={{ schemas, loading, error, reload, getSchema }}>
+    <SchemaContext.Provider
+      value={{ schemas, loading, error, reload, getSchema }}
+    >
       {children}
     </SchemaContext.Provider>
   );
@@ -71,6 +88,6 @@ export function SchemaProvider({ children }: { children: ReactNode }) {
 
 export function useSchemas(): SchemaContextValue {
   const ctx = useContext(SchemaContext);
-  if (!ctx) throw new Error('useSchemas must be used within a SchemaProvider');
+  if (!ctx) throw new Error("useSchemas must be used within a SchemaProvider");
   return ctx;
 }

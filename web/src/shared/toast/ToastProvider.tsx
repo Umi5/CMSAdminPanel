@@ -45,9 +45,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         autoHideDuration={4000}
         onClose={close}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        // Center over the content area, not the whole viewport: on desktop the
-        // permanent 264px sidebar occupies the left, so shift right by half of it.
-        sx={{ left: { md: "calc(50% + 132px)" } }}
       >
         <Alert
           severity={state.severity}

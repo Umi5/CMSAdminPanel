@@ -1,22 +1,19 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { theme } from './theme/theme';
-import { ToastProvider } from '@/shared/toast/ToastProvider';
-import App from './App';
-import './index.css';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { ColorModeProvider } from "./theme/ColorMode";
+import { ToastProvider } from "@/shared/toast/ToastProvider";
+import App from "./App";
+import "./index.css";
 
-const rootElement = document.getElementById('root');
-if (!rootElement) throw new Error('Root element #root not found');
+const rootElement = document.getElementById("root");
+if (!rootElement) throw new Error("Root element #root not found");
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <ColorModeProvider>
       <ToastProvider>
         <App />
       </ToastProvider>
-    </ThemeProvider>
+    </ColorModeProvider>
   </React.StrictMode>,
 );

@@ -14,6 +14,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TableSortLabel,
   TextField,
   Tooltip,
   Typography,
@@ -75,6 +76,9 @@ export function EntryListPage() {
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null);
+  const [sort, setSort] = useState<{ id: string; dir: "asc" | "desc" } | null>(
+    null,
+  );
   useDocumentTitle(schema?.name ?? "Content type");
 
   if (schemasLoading && !schema) return <LoadingState />;
@@ -163,6 +167,29 @@ export function EntryListPage() {
       else delete next[id];
       return next;
     });
+
+  const toggleSort = (id: string) =>
+    setSort((s) =>
+      s?.id !== id
+        ? { id, dir: "asc" }
+        : s.dir === "asc"
+          ? { id, dir: "desc" }
+          : null,
+    );
+
+  const sortedRows = sort
+    ? [...filteredRows].sort((a, b) => {
+        const av = a.values[sort.id];
+        const bv = b.values[sort.id];
+        const as = typeof av === "string" ? av : "";
+        const bs = typeof bv === "string" ? bv : "";
+        const cmp = as.localeCompare(bs, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
+        return sort.dir === "asc" ? cmp : -cmp;
+      })
+    : filteredRows;
 
   const deleteEntry = async () => {
     if (!schemaId || !deleteTarget) return;
@@ -462,21 +489,37 @@ export function EntryListPage() {
             >
               <TableHead>
                 <TableRow>
-                  {columns.map((field) => (
-                    <TableCell
-                      key={field.id}
-                      sx={{
-                        py: 1.25,
-                        color: "text.secondary",
-                        fontWeight: 600,
-                        fontSize: 11,
-                        letterSpacing: "0.04em",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {field.name}
-                    </TableCell>
-                  ))}
+                  {columns.map((field) => {
+                    const sortable =
+                      field.type === "text" || field.type === "date";
+                    const active = sort?.id === field.id;
+                    return (
+                      <TableCell
+                        key={field.id}
+                        sortDirection={active ? sort.dir : false}
+                        sx={{
+                          py: 1.25,
+                          color: "text.secondary",
+                          fontWeight: 600,
+                          fontSize: 11,
+                          letterSpacing: "0.04em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {sortable ? (
+                          <TableSortLabel
+                            active={active}
+                            direction={active ? sort.dir : "asc"}
+                            onClick={() => toggleSort(field.id)}
+                          >
+                            {field.name}
+                          </TableSortLabel>
+                        ) : (
+                          field.name
+                        )}
+                      </TableCell>
+                    );
+                  })}
                   <TableCell
                     align="right"
                     sx={{
@@ -504,7 +547,7 @@ export function EntryListPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredRows.map((entry) => (
+                  sortedRows.map((entry) => (
                     <TableRow
                       key={entry.id}
                       hover

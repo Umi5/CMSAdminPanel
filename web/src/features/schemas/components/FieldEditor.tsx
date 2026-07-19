@@ -63,25 +63,8 @@ export function FieldEditor({
   return (
     <Box
       className="flex flex-wrap items-start gap-3 px-4 py-3"
-      sx={{
-        transition: "background-color 120ms ease",
-        "&:hover": { bgcolor: "action.hover" },
-        ...(index > 0 ? { borderTop: 1, borderColor: "divider" } : {}),
-      }}
+      sx={index > 0 ? { borderTop: 1, borderColor: "divider" } : undefined}
     >
-      <Box
-        sx={{
-          mt: 1.25,
-          width: 20,
-          flexShrink: 0,
-          textAlign: "right",
-          color: "text.disabled",
-          fontSize: 12,
-          fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-        }}
-      >
-        {index + 1}
-      </Box>
       <Box className="flex-1" sx={{ minWidth: 180 }}>
         <TextField
           label="Field name"
@@ -141,10 +124,10 @@ export function FieldEditor({
           />
         }
         label="Required"
-        sx={{ mr: 0 }}
+        sx={{ mr: 0, height: 40 }}
       />
 
-      <Box className="flex items-center">
+      <Box sx={{ display: "flex", alignItems: "center", height: 40 }}>
         <Tooltip title="Move up">
           <span>
             <IconButton

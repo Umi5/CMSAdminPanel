@@ -1,4 +1,4 @@
-import type { Entry, Schema } from "@cms/shared";
+import type { Entry, EntryPage, Field, Schema } from "@cms/shared";
 import { store } from "../store";
 import { HttpError } from "../http";
 import { newId } from "../ids";
@@ -48,10 +48,108 @@ function entryOrThrow(schemaId: string, entryId: string): Entry {
   return entry;
 }
 
+export interface EntryListQuery {
+  search?: string;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
+  /** 1-based. */
+  page: number;
+  /** Undefined = no pagination (return everything). */
+  pageSize?: number;
+  /** Per-field filter values, keyed as the client sends them (see below). */
+  filter: Record<string, string>;
+}
+
+// Build the searchable text for an entry. Reference/boolean skipped (no labels
+// server-side); the search bar mainly targets text, with number/date included.
+function haystack(schema: Schema, entry: Entry): string {
+  const parts: string[] = [];
+  for (const field of schema.fields) {
+    const v = entry.values[field.id];
+    if (field.type === "text" || field.type === "date") {
+      if (typeof v === "string") parts.push(v);
+    } else if (field.type === "number") {
+      if (typeof v === "number") parts.push(String(v));
+    }
+  }
+  return parts.join(" ").toLowerCase();
+}
+
+function passesFilters(
+  schema: Schema,
+  entry: Entry,
+  filter: Record<string, string>,
+): boolean {
+  for (const field of schema.fields) {
+    if (field.type === "date") {
+      const from = filter[`${field.id}__from`];
+      const to = filter[`${field.id}__to`];
+      const raw = entry.values[field.id];
+      const v = typeof raw === "string" ? raw : "";
+      if (from && (!v || v < from)) return false;
+      if (to && (!v || v > to)) return false;
+      continue;
+    }
+    if (field.type === "number") {
+      const min = filter[`${field.id}__min`];
+      const max = filter[`${field.id}__max`];
+      const raw = entry.values[field.id];
+      const n = typeof raw === "number" ? raw : NaN;
+      if (min && (Number.isNaN(n) || n < Number(min))) return false;
+      if (max && (Number.isNaN(n) || n > Number(max))) return false;
+      continue;
+    }
+    const fv = filter[field.id];
+    if (!fv) continue;
+    if (field.type === "boolean") {
+      const isYes = entry.values[field.id] === true;
+      if (fv === "yes" && !isYes) return false;
+      if (fv === "no" && isYes) return false;
+    } else if (field.type === "reference") {
+      if (entry.values[field.id] !== fv) return false;
+    }
+  }
+  return true;
+}
+
+function sortRows(rows: Entry[], field: Field, dir: "asc" | "desc"): Entry[] {
+  const sign = dir === "desc" ? -1 : 1;
+  return [...rows].sort((a, b) => {
+    const av = a.values[field.id];
+    const bv = b.values[field.id];
+    const as = typeof av === "string" ? av : "";
+    const bs = typeof bv === "string" ? bv : "";
+    return (
+      as.localeCompare(bs, undefined, { numeric: true, sensitivity: "base" }) *
+      sign
+    );
+  });
+}
+
 export const entryService = {
-  list(schemaId: string): Entry[] {
-    schemaOrThrow(schemaId);
-    return store.listEntries(schemaId);
+  list(schemaId: string, query: EntryListQuery): EntryPage {
+    const schema = schemaOrThrow(schemaId);
+    let rows = store.listEntries(schemaId);
+
+    if (query.search) {
+      const q = query.search.toLowerCase();
+      rows = rows.filter((e) => haystack(schema, e).includes(q));
+    }
+    rows = rows.filter((e) => passesFilters(schema, e, query.filter));
+
+    if (query.sortBy) {
+      const field = schema.fields.find((f) => f.id === query.sortBy);
+      if (field && (field.type === "text" || field.type === "date")) {
+        rows = sortRows(rows, field, query.sortDir ?? "asc");
+      }
+    }
+
+    const total = rows.length;
+    const { page, pageSize } = query;
+    const items = pageSize
+      ? rows.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize)
+      : rows;
+    return { items, total, page, pageSize: pageSize ?? total };
   },
 
   get(schemaId: string, entryId: string): Entry {

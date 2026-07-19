@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Schema, Entry } from "@cms/shared";
+import type { Schema, EntryPage } from "@cms/shared";
 import { api } from "@/shared/api/client";
 import { useSchemas } from "@/shared/schema/SchemaProvider";
 import { useEvents } from "@/shared/realtime/EventsProvider";
@@ -33,10 +33,12 @@ export function useReferenceResolver(schema: Schema | undefined) {
   const load = useCallback(async () => {
     const result: Record<string, Record<string, string>> = {};
     for (const targetId of targetIds) {
-      const entries = await api.get<Entry[]>(`/schemas/${targetId}/entries`);
+      const { items } = await api.get<EntryPage>(
+        `/schemas/${targetId}/entries`,
+      );
       const target = getSchema(targetId);
       result[targetId] = Object.fromEntries(
-        entries.map((e) => [e.id, getEntryLabel(target, e)]),
+        items.map((e) => [e.id, getEntryLabel(target, e)]),
       );
     }
     setLabels(result);
@@ -54,9 +56,21 @@ export function useReferenceResolver(schema: Schema | undefined) {
     [subscribe, targetIds, load],
   );
 
-  return useCallback(
+  const resolve = useCallback(
     (schemaId: string, entryId: string) =>
       labels[schemaId]?.[entryId] ?? `#${entryId.slice(0, 6)}`,
     [labels],
   );
+
+  // All entries of a target, for the reference filter dropdown (every available
+  // option, independent of what's on the current page).
+  const optionsFor = useCallback(
+    (schemaId: string) =>
+      Object.entries(labels[schemaId] ?? {})
+        .map(([id, label]) => ({ id, label }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [labels],
+  );
+
+  return { resolve, optionsFor };
 }

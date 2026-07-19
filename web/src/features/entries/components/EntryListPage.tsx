@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -7,6 +7,7 @@ import {
   IconButton,
   InputAdornment,
   MenuItem,
+  Pagination,
   Paper,
   Popover,
   Table,
@@ -32,7 +33,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
-import type { Entry } from "@cms/shared";
+import type { Entry, EntryPage } from "@cms/shared";
 import { api, ApiError } from "@/shared/api/client";
 import { useSchemas } from "@/shared/schema/SchemaProvider";
 import { useToast } from "@/shared/toast/ToastProvider";
@@ -50,6 +51,7 @@ import { formatFieldValue } from "@/shared/util/formatValue";
 import { useReferenceResolver } from "../hooks/useReferenceResolver";
 
 const MAX_COLUMNS = 6;
+const PAGE_SIZE = 10;
 
 export function EntryListPage() {
   const { schemaId } = useParams();
@@ -57,17 +59,6 @@ export function EntryListPage() {
   const { getSchema, loading: schemasLoading } = useSchemas();
   const { showToast } = useToast();
   const schema = schemaId ? getSchema(schemaId) : undefined;
-
-  const {
-    data: entries,
-    loading,
-    error,
-    refetch,
-  } = useFetch<Entry[]>(schemaId ? `/schemas/${schemaId}/entries` : null);
-  useSchemaEvents(schemaId ?? null, (event) => {
-    if (event.type.startsWith("entry.")) void refetch();
-  });
-  const resolveRef = useReferenceResolver(schema);
 
   const [deleteTarget, setDeleteTarget] = useState<Entry | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -79,7 +70,40 @@ export function EntryListPage() {
   const [sort, setSort] = useState<{ id: string; dir: "asc" | "desc" } | null>(
     null,
   );
+  const [page, setPage] = useState(1); // 1-based
+
+  // Server-side list: filters, search, sort and pagination all ride on the URI.
+  // A changed path makes useFetch refetch.
+  const listPath = useMemo(() => {
+    if (!schemaId) return null;
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("pageSize", String(PAGE_SIZE));
+    const q = search.trim();
+    if (q) params.set("search", q);
+    if (sort) {
+      params.set("sortBy", sort.id);
+      params.set("sortDir", sort.dir);
+    }
+    for (const [key, value] of Object.entries(filters)) {
+      params.set(`filter[${key}]`, value);
+    }
+    return `/schemas/${schemaId}/entries?${params.toString()}`;
+  }, [schemaId, page, search, sort, filters]);
+
+  const { data, loading, error, refetch } = useFetch<EntryPage>(listPath);
+  useSchemaEvents(schemaId ?? null, (event) => {
+    if (event.type.startsWith("entry.")) void refetch();
+  });
+  const { resolve: resolveRef, optionsFor } = useReferenceResolver(schema);
   useDocumentTitle(schema?.name ?? "Content type");
+
+  // If a page ends up empty (entries deleted/filtered away), fall back to page 1.
+  useEffect(() => {
+    if (data && page > 1 && data.items.length === 0 && data.total > 0) {
+      setPage(1);
+    }
+  }, [data, page]);
 
   if (schemasLoading && !schema) return <LoadingState />;
   if (!schema) {
@@ -96,79 +120,46 @@ export function EntryListPage() {
   }
 
   const columns = schema.fields.slice(0, MAX_COLUMNS);
-  const rows = entries ?? [];
+  const rows = data?.items ?? [];
+  const total = data?.total ?? 0;
 
-  // Client-side search + per-field filters (number fields are not filterable).
-  const filterableFields = columns.filter((f) => f.type !== "number");
+  // Text is omitted from filters (search covers it); date/number use ranges.
+  const filterableFields = columns.filter((f) => f.type !== "text");
   const activeFilterCount = filterableFields.filter((f) =>
     f.type === "date"
       ? Boolean(filters[`${f.id}__from`] || filters[`${f.id}__to`])
-      : Boolean(filters[f.id]),
+      : f.type === "number"
+        ? Boolean(filters[`${f.id}__min`] || filters[`${f.id}__max`])
+        : Boolean(filters[f.id]),
   ).length;
-  const query = search.trim().toLowerCase();
+  const hasQuery = Boolean(search.trim()) || activeFilterCount > 0;
 
-  // Reference filter options: the referenced entries actually present in the rows.
+  // Reference filter options: every entry of the target type (all available).
   const referenceOptions: Record<string, { id: string; label: string }[]> = {};
   for (const field of filterableFields) {
     if (field.type !== "reference") continue;
-    const targetId = field.referenceSchemaId ?? "";
-    const ids = new Set<string>();
-    for (const entry of rows) {
-      const v = entry.values[field.id];
-      if (typeof v === "string" && v) ids.add(v);
-    }
-    referenceOptions[field.id] = [...ids]
-      .map((id) => ({ id, label: resolveRef(targetId, id) }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+    referenceOptions[field.id] = optionsFor(field.referenceSchemaId ?? "");
   }
 
-  const filteredRows = rows.filter((entry) => {
-    if (query) {
-      const haystack = columns
-        .map((f) => formatFieldValue(f, entry.values[f.id], resolveRef))
-        .join(" ")
-        .toLowerCase();
-      if (!haystack.includes(query)) return false;
-    }
-    for (const field of filterableFields) {
-      if (field.type === "date") {
-        const raw = entry.values[field.id];
-        const v = typeof raw === "string" ? raw : "";
-        const from = filters[`${field.id}__from`];
-        const to = filters[`${field.id}__to`];
-        if (from && (!v || v < from)) return false;
-        if (to && (!v || v > to)) return false;
-        continue;
-      }
-      const fv = filters[field.id];
-      if (!fv) continue;
-      if (field.type === "boolean") {
-        const isYes = entry.values[field.id] === true;
-        if (fv === "yes" && !isYes) return false;
-        if (fv === "no" && isYes) return false;
-      } else if (field.type === "reference") {
-        if (entry.values[field.id] !== fv) return false;
-      } else {
-        const cell = formatFieldValue(
-          field,
-          entry.values[field.id],
-          resolveRef,
-        ).toLowerCase();
-        if (!cell.includes(fv.toLowerCase())) return false;
-      }
-    }
-    return true;
-  });
-
-  const setFilter = (id: string, value: string) =>
+  // Filter/search/sort changes reset to the first page.
+  const setFilter = (id: string, value: string) => {
     setFilters((prev) => {
       const next = { ...prev };
       if (value) next[id] = value;
       else delete next[id];
       return next;
     });
-
-  const toggleSort = (id: string) =>
+    setPage(1);
+  };
+  const clearFilters = () => {
+    setFilters({});
+    setPage(1);
+  };
+  const changeSearch = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+  const toggleSort = (id: string) => {
     setSort((s) =>
       s?.id !== id
         ? { id, dir: "asc" }
@@ -176,20 +167,8 @@ export function EntryListPage() {
           ? { id, dir: "desc" }
           : null,
     );
-
-  const sortedRows = sort
-    ? [...filteredRows].sort((a, b) => {
-        const av = a.values[sort.id];
-        const bv = b.values[sort.id];
-        const as = typeof av === "string" ? av : "";
-        const bs = typeof bv === "string" ? bv : "";
-        const cmp = as.localeCompare(bs, undefined, {
-          numeric: true,
-          sensitivity: "base",
-        });
-        return sort.dir === "asc" ? cmp : -cmp;
-      })
-    : filteredRows;
+    setPage(1);
+  };
 
   const deleteEntry = async () => {
     if (!schemaId || !deleteTarget) return;
@@ -241,8 +220,8 @@ export function EntryListPage() {
         title={schema.name}
         subtitle={
           <>
-            API id <code>{schema.apiId}</code> · {rows.length}{" "}
-            {rows.length === 1 ? "entry" : "entries"}
+            API id <code>{schema.apiId}</code> · {total}{" "}
+            {total === 1 ? "entry" : "entries"}
           </>
         }
         actions={
@@ -273,11 +252,11 @@ export function EntryListPage() {
         }
       />
 
-      {loading ? (
+      {loading && !data ? (
         <LoadingState label="Loading entries…" />
       ) : error ? (
         <ErrorState message={error} onRetry={refetch} />
-      ) : rows.length === 0 ? (
+      ) : total === 0 && !hasQuery ? (
         <EmptyState
           icon={<Inventory2RoundedIcon sx={{ fontSize: 40 }} />}
           title="No entries yet"
@@ -299,7 +278,7 @@ export function EntryListPage() {
               size="small"
               placeholder="Search entries…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => changeSearch(e.target.value)}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -415,6 +394,30 @@ export function EntryListPage() {
                         </TextField>
                       );
                     }
+                    if (field.type === "number") {
+                      const minKey = `${field.id}__min`;
+                      const maxKey = `${field.id}__max`;
+                      return (
+                        <Box key={field.id} className="flex flex-wrap gap-2">
+                          <TextField
+                            type="number"
+                            size="small"
+                            label={`${field.name} min`}
+                            value={filters[minKey] ?? ""}
+                            onChange={(e) => setFilter(minKey, e.target.value)}
+                            sx={{ flex: "1 1 120px" }}
+                          />
+                          <TextField
+                            type="number"
+                            size="small"
+                            label={`${field.name} max`}
+                            value={filters[maxKey] ?? ""}
+                            onChange={(e) => setFilter(maxKey, e.target.value)}
+                            sx={{ flex: "1 1 120px" }}
+                          />
+                        </Box>
+                      );
+                    }
                     if (field.type === "date") {
                       const fromKey = `${field.id}__from`;
                       const toKey = `${field.id}__to`;
@@ -468,11 +471,7 @@ export function EntryListPage() {
                   })
                 )}
                 <Divider />
-                <Button
-                  size="small"
-                  color="inherit"
-                  onClick={() => setFilters({})}
-                >
+                <Button size="small" color="inherit" onClick={clearFilters}>
                   Clear filters
                 </Button>
               </Box>
@@ -536,7 +535,7 @@ export function EntryListPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredRows.length === 0 ? (
+                {rows.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={columns.length + 1}
@@ -547,7 +546,7 @@ export function EntryListPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  sortedRows.map((entry) => (
+                  rows.map((entry) => (
                     <TableRow
                       key={entry.id}
                       hover
@@ -623,6 +622,23 @@ export function EntryListPage() {
               </TableBody>
             </Table>
           </Paper>
+
+          {total > PAGE_SIZE && (
+            <Box className="flex items-center justify-between gap-2 mt-3">
+              <Typography variant="caption" color="text.secondary">
+                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)}{" "}
+                of {total}
+              </Typography>
+              <Pagination
+                count={Math.ceil(total / PAGE_SIZE)}
+                page={page}
+                onChange={(_, p) => setPage(p)}
+                shape="rounded"
+                size="small"
+                color="primary"
+              />
+            </Box>
+          )}
         </>
       )}
 

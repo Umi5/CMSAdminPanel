@@ -1,8 +1,9 @@
-import type { Entry } from "@cms/shared";
+import type { Entry, EntryPage } from "@cms/shared";
 import { api } from "@/shared/api/client";
 
 export const entriesApi = {
-  list: (schemaId: string) => api.get<Entry[]>(`/schemas/${schemaId}/entries`),
+  list: (schemaId: string) =>
+    api.get<EntryPage>(`/schemas/${schemaId}/entries`),
   get: (schemaId: string, entryId: string) =>
     api.get<Entry>(`/schemas/${schemaId}/entries/${entryId}`),
   create: (schemaId: string, values: Record<string, unknown>) =>

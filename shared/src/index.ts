@@ -41,6 +41,13 @@ export interface Entry {
   updatedAt: string;
 }
 
+export interface EntryPage {
+  items: Entry[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 // --- Migration contract ---
 
 export type ChangeKind =

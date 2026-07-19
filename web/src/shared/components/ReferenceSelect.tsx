@@ -1,5 +1,5 @@
 import { Autocomplete, TextField } from "@mui/material";
-import type { Entry } from "@cms/shared";
+import type { EntryPage } from "@cms/shared";
 import { useFetch } from "@/shared/hooks/useFetch";
 import { useSchemas } from "@/shared/schema/SchemaProvider";
 import { getEntryLabel } from "@/shared/util/entryLabel";
@@ -19,10 +19,10 @@ export function ReferenceSelect({
 }) {
   const { getSchema } = useSchemas();
   const target = getSchema(targetSchemaId);
-  const { data: entries, loading } = useFetch<Entry[]>(
+  const { data, loading } = useFetch<EntryPage>(
     targetSchemaId ? `/schemas/${targetSchemaId}/entries` : null,
   );
-  const options = entries ?? [];
+  const options = data?.items ?? [];
   const selected = options.find((e) => e.id === value) ?? null;
 
   return (

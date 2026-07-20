@@ -94,6 +94,16 @@ export function createAppTheme(mode: PaletteMode) {
               ? "rgba(124,133,232,0.35)"
               : "rgba(94,106,210,0.18)",
           },
+          // Drop the native number-input spinner arrows; they clash with the UI.
+          "input[type=number]": { MozAppearance: "textfield" },
+          "input[type=number]::-webkit-outer-spin-button": {
+            WebkitAppearance: "none",
+            margin: 0,
+          },
+          "input[type=number]::-webkit-inner-spin-button": {
+            WebkitAppearance: "none",
+            margin: 0,
+          },
           "*": {
             scrollbarColor: `${isDark ? "#3a3d47" : "#cbd5e1"} transparent`,
           },

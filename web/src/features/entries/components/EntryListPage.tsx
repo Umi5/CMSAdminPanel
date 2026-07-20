@@ -3,7 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
   Button,
+  Checkbox,
   Divider,
+  FormControlLabel,
   IconButton,
   InputAdornment,
   MenuItem,
@@ -28,6 +30,7 @@ import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import FilterListRoundedIcon from "@mui/icons-material/FilterListRounded";
+import ViewColumnRoundedIcon from "@mui/icons-material/ViewColumnRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -47,6 +50,7 @@ import {
   EmptyState,
 } from "@/shared/components/StateViews";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
+import { NumberField } from "@/shared/components/NumberField";
 import { formatFieldValue } from "@/shared/util/formatValue";
 import { useReferenceResolver } from "../hooks/useReferenceResolver";
 
@@ -67,6 +71,12 @@ export function EntryListPage() {
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null);
+  const [columnsAnchor, setColumnsAnchor] = useState<HTMLElement | null>(null);
+  // Column choice per schema id; missing = default (first MAX_COLUMNS). Keyed by
+  // schema so each content type remembers its own visible columns across nav.
+  const [visibleBySchema, setVisibleBySchema] = useState<
+    Record<string, Set<string>>
+  >({});
   const [sort, setSort] = useState<{ id: string; dir: "asc" | "desc" } | null>(
     null,
   );
@@ -98,6 +108,15 @@ export function EntryListPage() {
   const { resolve: resolveRef, optionsFor } = useReferenceResolver(schema);
   useDocumentTitle(schema?.name ?? "Content type");
 
+  // Switching content type: reset filters/sort/search/page (they're field-id
+  // specific to one schema). Column choice is kept per schema, so not reset here.
+  useEffect(() => {
+    setFilters({});
+    setSort(null);
+    setSearch("");
+    setPage(1);
+  }, [schemaId]);
+
   // If a page ends up empty (entries deleted/filtered away), fall back to page 1.
   useEffect(() => {
     if (data && page > 1 && data.items.length === 0 && data.total > 0) {
@@ -119,9 +138,38 @@ export function EntryListPage() {
     );
   }
 
-  const columns = schema.fields.slice(0, MAX_COLUMNS);
+  // Visible columns for this schema (default = first MAX_COLUMNS, capped there).
+  const visibleSet =
+    visibleBySchema[schema.id] ??
+    new Set(schema.fields.slice(0, MAX_COLUMNS).map((f) => f.id));
+  const columns = schema.fields.filter((f) => visibleSet.has(f.id));
   const rows = data?.items ?? [];
   const total = data?.total ?? 0;
+
+  const setVisible = (next: Set<string>) =>
+    setVisibleBySchema((prev) => ({ ...prev, [schema.id]: next }));
+
+  const toggleColumn = (id: string) => {
+    if (visibleSet.has(id)) {
+      const next = new Set(visibleSet);
+      next.delete(id);
+      setVisible(next);
+      // Drop any filter/sort tied to a now-hidden column.
+      setFilters((prev) => {
+        const n = { ...prev };
+        for (const key of Object.keys(n)) {
+          if (key === id || key.startsWith(`${id}__`)) delete n[key];
+        }
+        return n;
+      });
+      setSort((s) => (s?.id === id ? null : s));
+      setPage(1);
+    } else if (visibleSet.size < MAX_COLUMNS) {
+      const next = new Set(visibleSet);
+      next.add(id);
+      setVisible(next);
+    }
+  };
 
   // Text is omitted from filters (search covers it); date/number use ranges.
   const filterableFields = columns.filter((f) => f.type !== "text");
@@ -291,7 +339,24 @@ export function EntryListPage() {
               }}
               sx={{ width: { xs: "100%", sm: 260 } }}
             />
-            <Box className="ml-auto">
+            <Box className="ml-auto flex items-center gap-2">
+              <Button
+                variant="outlined"
+                startIcon={<ViewColumnRoundedIcon />}
+                onClick={(e) => setColumnsAnchor(e.currentTarget)}
+                sx={{
+                  height: 40,
+                  px: 2,
+                  color: "text.secondary",
+                  borderColor: "divider",
+                  "&:hover": {
+                    borderColor: "text.disabled",
+                    bgcolor: "action.hover",
+                  },
+                }}
+              >
+                Columns
+              </Button>
               <Button
                 variant="outlined"
                 startIcon={<FilterListRoundedIcon />}
@@ -332,6 +397,47 @@ export function EntryListPage() {
               </Button>
             </Box>
           </Box>
+
+          <Popover
+            open={Boolean(columnsAnchor)}
+            anchorEl={columnsAnchor}
+            onClose={() => setColumnsAnchor(null)}
+            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+            transformOrigin={{ vertical: "top", horizontal: "left" }}
+            slotProps={{ paper: { sx: { mt: 1, width: 260 } } }}
+          >
+            <Box className="flex flex-col p-3">
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "text.secondary",
+                  fontWeight: 600,
+                  letterSpacing: "0.06em",
+                  mb: 1,
+                }}
+              >
+                COLUMNS · {visibleSet.size}/{MAX_COLUMNS}
+              </Typography>
+              {schema.fields.map((field) => {
+                const checked = visibleSet.has(field.id);
+                return (
+                  <FormControlLabel
+                    key={field.id}
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={checked}
+                        disabled={!checked && visibleSet.size >= MAX_COLUMNS}
+                        onChange={() => toggleColumn(field.id)}
+                      />
+                    }
+                    label={field.name}
+                    slotProps={{ typography: { variant: "body2" } }}
+                  />
+                );
+              })}
+            </Box>
+          </Popover>
 
           <Popover
             open={Boolean(filterAnchor)}
@@ -399,20 +505,18 @@ export function EntryListPage() {
                       const maxKey = `${field.id}__max`;
                       return (
                         <Box key={field.id} className="flex flex-wrap gap-2">
-                          <TextField
-                            type="number"
+                          <NumberField
                             size="small"
                             label={`${field.name} min`}
                             value={filters[minKey] ?? ""}
-                            onChange={(e) => setFilter(minKey, e.target.value)}
+                            onChange={(v) => setFilter(minKey, v)}
                             sx={{ flex: "1 1 120px" }}
                           />
-                          <TextField
-                            type="number"
+                          <NumberField
                             size="small"
                             label={`${field.name} max`}
                             value={filters[maxKey] ?? ""}
-                            onChange={(e) => setFilter(maxKey, e.target.value)}
+                            onChange={(v) => setFilter(maxKey, v)}
                             sx={{ flex: "1 1 120px" }}
                           />
                         </Box>
@@ -422,7 +526,7 @@ export function EntryListPage() {
                       const fromKey = `${field.id}__from`;
                       const toKey = `${field.id}__to`;
                       return (
-                        <Box key={field.id} className="flex flex-col gap-3">
+                        <Box key={field.id} className="flex flex-wrap gap-2">
                           <DatePicker
                             label={`${field.name} from`}
                             value={
@@ -435,7 +539,10 @@ export function EntryListPage() {
                               )
                             }
                             slotProps={{
-                              textField: { size: "small", fullWidth: true },
+                              textField: {
+                                size: "small",
+                                sx: { flex: "1 1 130px" },
+                              },
                               field: { clearable: true },
                             }}
                           />
@@ -451,7 +558,10 @@ export function EntryListPage() {
                               )
                             }
                             slotProps={{
-                              textField: { size: "small", fullWidth: true },
+                              textField: {
+                                size: "small",
+                                sx: { flex: "1 1 130px" },
+                              },
                               field: { clearable: true },
                             }}
                           />

@@ -5,6 +5,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import type { Field } from "@cms/shared";
 import { ReferenceField } from "./ReferenceField";
+import { NumberField } from "@/shared/components/NumberField";
 
 /** Renders the right input for a field's type — this is the dynamic form. */
 export function FieldInput({
@@ -33,15 +34,12 @@ export function FieldInput({
       );
     case "number":
       return (
-        <TextField
+        <NumberField
           label={field.name}
           required={field.required}
-          type="number"
           fullWidth
           value={value === undefined || value === null ? "" : String(value)}
-          onChange={(e) =>
-            onChange(e.target.value === "" ? undefined : Number(e.target.value))
-          }
+          onChange={(v) => onChange(v === "" ? undefined : Number(v))}
           error={Boolean(error)}
           helperText={error}
         />

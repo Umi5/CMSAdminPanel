@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Alert, Box, Button } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
@@ -44,6 +44,8 @@ export function EntryEditorPage() {
     setPinnedSchema((prev) => prev ?? liveSchema);
   }, [liveSchema]);
   const [schemaChanged, setSchemaChanged] = useState(false);
+  /** Set when this page triggers the delete, so we ignore the echoed event. */
+  const selfDeleted = useRef(false);
 
   useSchemaEvents(schemaId ?? null, (event) => {
     if (event.type === "schema.updated") setSchemaChanged(true);
@@ -52,6 +54,9 @@ export function EntryEditorPage() {
       navigate("/schemas");
     }
     if (event.type === "entry.deleted" && event.entryId === entryId) {
+      // Our own delete already toasts (red) and navigates; the echoed event
+      // would otherwise overwrite it with the blue "deleted elsewhere" notice.
+      if (selfDeleted.current) return;
       showToast("This entry was deleted", "info");
       navigate(listPath);
     }
@@ -123,11 +128,13 @@ export function EntryEditorPage() {
   const remove = async () => {
     if (!schemaId || !entryId) return;
     setDeleting(true);
+    selfDeleted.current = true;
     try {
       await entriesApi.remove(schemaId, entryId);
       showToast("Entry deleted", "error");
       navigate(listPath);
     } catch (err) {
+      selfDeleted.current = false;
       showToast(
         err instanceof ApiError ? err.message : "Failed to delete entry",
         "error",

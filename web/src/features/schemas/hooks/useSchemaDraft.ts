@@ -7,6 +7,7 @@ export interface DraftField {
   type: FieldType;
   required: boolean;
   referenceSchemaId?: string;
+  nonNegative?: boolean;
 }
 
 /** The payload shape sent to create / migration endpoints. */
@@ -33,6 +34,7 @@ export function schemaToDraft(schema: Schema): SchemaDraftPayload {
       ...(f.referenceSchemaId
         ? { referenceSchemaId: f.referenceSchemaId }
         : {}),
+      ...(f.nonNegative ? { nonNegative: true } : {}),
     })),
   };
 }
@@ -46,6 +48,7 @@ function cleanField(field: DraftField): DraftField {
   };
   if (field.type === "reference" && field.referenceSchemaId)
     base.referenceSchemaId = field.referenceSchemaId;
+  if (field.type === "number" && field.nonNegative) base.nonNegative = true;
   return base;
 }
 
@@ -102,6 +105,7 @@ export function useSchemaDraft(initial: SchemaDraftPayload) {
         if (field.id !== id) return field;
         const next: DraftField = { ...field, ...patch };
         if (next.type !== "reference") delete next.referenceSchemaId;
+        if (next.type !== "number") delete next.nonNegative;
         return next;
       }),
     );

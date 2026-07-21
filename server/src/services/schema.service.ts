@@ -17,6 +17,7 @@ function buildField(input: FieldInput): Field {
   if (input.type === "reference" && input.referenceSchemaId) {
     field.referenceSchemaId = input.referenceSchemaId;
   }
+  if (input.type === "number" && input.nonNegative) field.nonNegative = true;
   return field;
 }
 

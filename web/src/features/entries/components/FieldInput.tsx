@@ -42,6 +42,7 @@ export function FieldInput({
           onChange={(v) => onChange(v === "" ? undefined : Number(v))}
           error={Boolean(error)}
           helperText={error}
+          min={field.nonNegative ? 0 : undefined}
         />
       );
     case "boolean":

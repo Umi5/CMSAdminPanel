@@ -16,6 +16,7 @@ export function NumberField({
   helperText,
   fullWidth,
   sx,
+  min,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -26,10 +27,13 @@ export function NumberField({
   helperText?: string;
   fullWidth?: boolean;
   sx?: SxProps<Theme>;
+  min?: number;
 }) {
   const step = (delta: number) => {
     const n = Number(value);
-    onChange(String((Number.isFinite(n) ? n : 0) + delta));
+    const next = (Number.isFinite(n) ? n : 0) + delta;
+    if (min !== undefined && next < min) return;
+    onChange(String(next));
   };
 
   const stepButton = (dir: 1 | -1) => (
@@ -68,6 +72,7 @@ export function NumberField({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       slotProps={{
+        htmlInput: { min },
         input: {
           endAdornment: (
             <InputAdornment position="end">

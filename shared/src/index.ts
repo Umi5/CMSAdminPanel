@@ -15,15 +15,14 @@ export interface Field {
   required: boolean;
   /** Only set when `type === 'reference'`: the schema id this field points to. */
   referenceSchemaId?: string;
+  nonNegative?: boolean;
 }
 
 export interface Schema {
   id: string;
   name: string;
-  /** URL slug used by the read API, e.g. "wine". Unique across schemas. */
   apiId: string;
   fields: Field[];
-  /** Bumped on every applied migration; drives optimistic-concurrency checks. */
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -59,13 +58,7 @@ export type ChangeKind =
   | "required_disabled"
   | "reference_retargeted";
 
-/**
- * How dangerous a change is to existing data:
- * - safe: no data loss, always converts (rename, widen-to-text, add optional…)
- * - warning: entries may become invalid but no value is silently corrupted
- * - risky: per-value conversion that can fail (text→number on "vintage")
- * - destructive: data is dropped or references dangle (delete-with-data, retarget)
- */
+// --- Migration plan and application ---
 export type Severity = "safe" | "warning" | "risky" | "destructive";
 
 export interface ValueIssue {

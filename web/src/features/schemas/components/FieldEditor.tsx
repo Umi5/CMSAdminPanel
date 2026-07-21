@@ -1,5 +1,6 @@
 import {
   Box,
+  Checkbox,
   FormControlLabel,
   IconButton,
   MenuItem,
@@ -114,6 +115,21 @@ export function FieldEditor({
             </MenuItem>
           ))}
         </TextField>
+      )}
+
+      {field.type === "number" && (
+        <FormControlLabel
+          control={
+            <Checkbox
+              size="small"
+              checked={Boolean(field.nonNegative)}
+              onChange={(e) => onChange({ nonNegative: e.target.checked })}
+            />
+          }
+          label="0 or positive"
+          sx={{ mr: 0, height: 40 }}
+          slotProps={{ typography: { variant: "body2" } }}
+        />
       )}
 
       <FormControlLabel

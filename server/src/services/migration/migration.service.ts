@@ -41,6 +41,7 @@ function buildDraftSchema(current: Schema, input: DraftSchemaInput): Schema {
       };
       if (f.type === "reference" && f.referenceSchemaId)
         field.referenceSchemaId = f.referenceSchemaId;
+      if (f.type === "number" && f.nonNegative) field.nonNegative = true;
       return field;
     }),
   };

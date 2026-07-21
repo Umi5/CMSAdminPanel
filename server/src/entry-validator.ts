@@ -31,9 +31,9 @@ function checkType(
     case "text":
       return typeof value === "string" ? null : "must be text";
     case "number":
-      return typeof value === "number" && Number.isFinite(value)
-        ? null
-        : "must be a number";
+      if (typeof value !== "number" || !Number.isFinite(value))
+        return "must be a number";
+      return field.nonNegative && value < 0 ? "must be 0 or greater" : null;
     case "boolean":
       return typeof value === "boolean" ? null : "must be true or false";
     case "date":

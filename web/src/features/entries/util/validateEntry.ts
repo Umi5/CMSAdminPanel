@@ -18,6 +18,8 @@ export function validateEntry(
       case "number":
         if (typeof value !== "number" || !Number.isFinite(value))
           errors[field.id] = "Must be a number";
+        else if (field.nonNegative && value < 0)
+          errors[field.id] = "Must be 0 or greater";
         break;
       case "boolean":
         if (typeof value !== "boolean")

@@ -20,6 +20,7 @@ export const fieldInputSchema = z
     type: fieldTypeSchema,
     required: z.boolean().optional().default(false),
     referenceSchemaId: z.string().min(1).optional(),
+    nonNegative: z.boolean().optional(),
   })
   .refine((f) => f.type !== "reference" || Boolean(f.referenceSchemaId), {
     message: "Reference fields require a referenceSchemaId",

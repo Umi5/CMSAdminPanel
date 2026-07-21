@@ -81,4 +81,47 @@ describe("validateEntryValues", () => {
       [],
     );
   });
+
+  describe("nonNegative number fields", () => {
+    const nonNegSchema: Schema = {
+      ...schema,
+      fields: [
+        { id: "name", name: "Name", type: "text", required: true },
+        {
+          id: "stock",
+          name: "Stock",
+          type: "number",
+          required: false,
+          nonNegative: true,
+        },
+      ],
+    };
+
+    it("rejects a negative value", () => {
+      const errors = validateEntryValues(nonNegSchema, {
+        name: "A",
+        stock: -1,
+      });
+      expect(errors).toEqual([
+        {
+          fieldId: "stock",
+          fieldName: "Stock",
+          message: "must be 0 or greater",
+        },
+      ]);
+    });
+
+    it("accepts 0 and positives", () => {
+      expect(
+        validateEntryValues(nonNegSchema, { name: "A", stock: 0 }),
+      ).toEqual([]);
+      expect(
+        validateEntryValues(nonNegSchema, { name: "A", stock: 12 }),
+      ).toEqual([]);
+    });
+
+    it("still allows negatives when the flag is off", () => {
+      expect(validateEntryValues(schema, { name: "A", age: -5 })).toEqual([]);
+    });
+  });
 });

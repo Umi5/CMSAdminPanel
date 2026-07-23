@@ -74,6 +74,72 @@ function change(
   );
 }
 
+describe("planMigration: non-negative constraint", () => {
+  // A number field with a mix of negative and non-negative stored values.
+  const stock: Schema = {
+    ...current,
+    fields: [
+      { id: "name", name: "Name", type: "text", required: true },
+      { id: "stock", name: "Stock", type: "number", required: false },
+    ],
+  };
+  const stockEntries: Entry[] = [
+    { ...entries[0]!, id: "s1", values: { name: "A", stock: 5 } },
+    { ...entries[0]!, id: "s2", values: { name: "B", stock: -3 } },
+    { ...entries[0]!, id: "s3", values: { name: "C" } },
+  ];
+  const withConstraint = (nonNegative: boolean): Schema => ({
+    ...stock,
+    fields: stock.fields.map((f) =>
+      f.id === "stock" ? { ...f, nonNegative } : f,
+    ),
+  });
+
+  it("flags the negative values when the constraint is enabled", () => {
+    const plan = planMigration(
+      stock,
+      withConstraint(true),
+      stockEntries,
+      noRefs,
+    );
+    const c = change(plan, "stock", "constraint_enabled");
+    expect(c?.severity).toBe("warning");
+    expect(c?.needsAttention).toHaveLength(1);
+    expect(c?.needsAttention[0]?.entryId).toBe("s2");
+    expect(c?.needsAttention[0]?.currentValue).toBe(-3);
+  });
+
+  it("is safe when no stored value is negative", () => {
+    const plan = planMigration(
+      stock,
+      withConstraint(true),
+      [stockEntries[0]!, stockEntries[2]!],
+      noRefs,
+    );
+    expect(change(plan, "stock", "constraint_enabled")?.severity).toBe("safe");
+  });
+
+  it("is safe when the constraint is removed", () => {
+    const plan = planMigration(
+      withConstraint(true),
+      withConstraint(false),
+      stockEntries,
+      noRefs,
+    );
+    expect(change(plan, "stock", "constraint_disabled")?.severity).toBe("safe");
+  });
+
+  it("reports no change when the constraint is untouched", () => {
+    const plan = planMigration(
+      withConstraint(true),
+      withConstraint(true),
+      stockEntries,
+      noRefs,
+    );
+    expect(plan.changes).toHaveLength(0);
+  });
+});
+
 describe("planMigration", () => {
   it("treats a rename as safe with nothing to migrate", () => {
     const draft = draftWith(

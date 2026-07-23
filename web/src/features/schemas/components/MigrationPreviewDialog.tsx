@@ -29,6 +29,8 @@ const CHANGE_LABEL: Record<FieldChange["changeKind"], string> = {
   field_retyped: "Type changed",
   required_enabled: "Now required",
   required_disabled: "Optional",
+  constraint_enabled: "Now 0 or positive",
+  constraint_disabled: "Negatives allowed",
   reference_retargeted: "Reference retargeted",
 };
 
@@ -51,6 +53,12 @@ function describe(change: FieldChange): string {
         ? `${change.needsAttention.length} entries are missing a value`
         : "Every entry already has a value";
     case "required_disabled":
+      return "Loosened — no data affected";
+    case "constraint_enabled":
+      return change.needsAttention.length > 0
+        ? `${change.needsAttention.length} entries hold a negative value`
+        : "No entry holds a negative value";
+    case "constraint_disabled":
       return "Loosened — no data affected";
     case "reference_retargeted":
       return change.needsAttention.length > 0

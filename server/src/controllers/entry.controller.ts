@@ -1,17 +1,8 @@
 import type { Request, Response } from "express";
 import { entryService } from "../services/entry.service";
 import { entryBodySchema } from "../validation/entry.validation";
-import { requireParam } from "../http";
+import { requireParam, toInt, toStr } from "../http";
 import { eventBus } from "../events";
-
-function toInt(value: unknown, fallback: number): number {
-  const n = typeof value === "string" ? parseInt(value, 10) : NaN;
-  return Number.isFinite(n) ? n : fallback;
-}
-
-function toStr(value: unknown): string | undefined {
-  return typeof value === "string" && value ? value : undefined;
-}
 
 export const entryController = {
   list(req: Request, res: Response): void {

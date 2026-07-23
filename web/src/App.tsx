@@ -7,6 +7,7 @@ import { SchemaListPage } from "@/features/schemas/components/SchemaListPage";
 import { SchemaBuilderPage } from "@/features/schemas/components/SchemaBuilderPage";
 import { EntryListPage } from "@/features/entries/components/EntryListPage";
 import { EntryEditorPage } from "@/features/entries/components/EntryEditorPage";
+import { ApiExplorerPage } from "@/features/api-explorer/components/ApiExplorerPage";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Navigate to="/schemas" replace />} />
               <Route path="/schemas" element={<SchemaListPage />} />
+              <Route path="/api-explorer" element={<ApiExplorerPage />} />
               <Route path="/schemas/new" element={<SchemaBuilderPage />} />
               <Route path="/schemas/:schemaId" element={<EntryListPage />} />
               <Route

@@ -24,3 +24,14 @@ export function requireParam(req: Request, name: string): string {
   }
   return value;
 }
+
+/** Parse a query-string integer, falling back when it is missing or malformed. */
+export function toInt(value: unknown, fallback: number): number {
+  const n = typeof value === "string" ? parseInt(value, 10) : NaN;
+  return Number.isFinite(n) ? n : fallback;
+}
+
+/** Read a non-empty string query param, or undefined. */
+export function toStr(value: unknown): string | undefined {
+  return typeof value === "string" && value ? value : undefined;
+}

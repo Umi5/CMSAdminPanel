@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -107,6 +107,18 @@ export function EntryListPage() {
   });
   const { resolve: resolveRef, optionsFor } = useReferenceResolver(schema);
   useDocumentTitle(schema?.name ?? "Content type");
+
+  // `data` still holds the previous response while a new query is in flight, so
+  // it can disagree with the live filters. Track which path the data belongs to
+  // and treat the mismatch as stale, otherwise clearing a filter that matched
+  // nothing briefly swaps the toolbar for the "no entries yet" empty state, which
+  // unmounts the Filters button an open popover is anchored to.
+  const loadedFor = useRef(listPath);
+  useEffect(() => {
+    loadedFor.current = listPath;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+  const stale = loadedFor.current !== listPath;
 
   // Switching content type: reset filters/sort/search/page (they're field-id
   // specific to one schema). Column choice is kept per schema, so not reset here.
@@ -304,7 +316,7 @@ export function EntryListPage() {
         <LoadingState label="Loading entries…" />
       ) : error ? (
         <ErrorState message={error} onRetry={refetch} />
-      ) : total === 0 && !hasQuery ? (
+      ) : total === 0 && !hasQuery && !stale ? (
         <EmptyState
           icon={<Inventory2RoundedIcon sx={{ fontSize: 40 }} />}
           title="No entries yet"

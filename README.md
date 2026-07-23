@@ -5,7 +5,8 @@ typed fields) and manage **entries** through forms that are generated from the s
 hand-written per type. The focus is a polished front end backed by a deliberately thin API.
 
 The hard problem it takes seriously is **schema evolution**: when a field is renamed, retyped,
-deleted, made required, or a reference is retargeted, existing entries may no longer fit. The
+deleted, made required, constrained, or a reference is retargeted, existing entries may no
+longer fit. The
 app communicates the risk, shows which entries are affected, previews the change, and lets you
 fix the data that can't be converted automatically — all before anything is written.
 
@@ -30,12 +31,12 @@ npm run dev
 
 Other scripts (root):
 
-| Script | What it does |
-| --- | --- |
-| `npm run dev` | Backend (`tsx watch`) + frontend (`vite`) together |
-| `npm run typecheck` | Strict `tsc --noEmit` across all three workspaces |
-| `npm run test` | Vitest unit tests (backend logic) |
-| `npm run build` | Production build of the web app |
+| Script              | What it does                                       |
+| ------------------- | -------------------------------------------------- |
+| `npm run dev`       | Backend (`tsx watch`) + frontend (`vite`) together |
+| `npm run typecheck` | Strict `tsc --noEmit` across all three workspaces  |
+| `npm run test`      | Vitest unit tests (backend logic + web components) |
+| `npm run build`     | Production build of the web app                    |
 
 Data persists to `server/data/store.json` (git-ignored). Delete it to re-seed from scratch.
 
@@ -73,6 +74,7 @@ web/src/
   features/
     schemas/            list, builder (local draft), field editor, migration preview dialog
     entries/            entries table, dynamic form, per-type inputs, reference picker
+    api-explorer/       in-app playground for the public read API + JSON viewer
 ```
 
 ---
@@ -120,7 +122,9 @@ look. Minimal-modern direction: indigo accent, slate neutrals, airy spacing.
 ## Read API
 
 A read-only API proving the admin manages real content another app could consume. Output is
-keyed by **current field name**, nested under `data`:
+keyed by a **snake_case field key** derived from the current field name (`Release Date` becomes
+`release_date`), nested under `data`. Display names carry spaces and capitals, which make
+awkward JSON keys and need escaping in a URL; the key is what consumers actually type:
 
 ```
 GET /api/content/:type            list entries of a content type (by apiId slug)
@@ -128,9 +132,40 @@ GET /api/content/:type/:id        one entry
 ```
 
 ```bash
-curl -s localhost:4100/api/content/wine | jq '.[0].data'
-# { "Name": "Château Margaux 2015", "Year": "2015", "Rating": 98, "In Stock": true, ... }
+curl -s localhost:4100/api/content/wine | jq '.items[0].data'
+# { "name": "Château Margaux 2015", "year": "2015", "rating": 98, "in_stock": true, ... }
 ```
+
+The collection response is an envelope so pagination is self-describing:
+`{ items, total, page, pageSize }`. A single entry is returned bare.
+
+**Pagination and filters.** The consumer chooses the page size; omit it and the whole
+collection comes back. Filters use the same **field key** as the output, because that is the
+public contract (the admin API filters by field id instead):
+
+```
+?page=2&pageSize=10                 caller-chosen page size (capped at 100)
+?filter[name]=margaux               text: case-insensitive contains
+?filter[rating]=98                  number / date / reference: exact
+?filter[in_stock]=true              boolean
+?filter[rating][min]=90&filter[rating][max]=99     number range
+?filter[release_date][min]=2019-01-01              date range
+```
+
+`total` is the count after filtering and before pagination. An unknown key is a `400` that
+lists the valid ones, rather than a silently ignored filter, so typos surface immediately.
+
+Keys are derived, so renaming a field changes its key. That is the same intentional
+breaking-change trade-off called out below. A field-level `apiId` the author controls, so the
+display name and the public key can move independently, is the natural next step.
+
+An entry's `id` is a bare GUID, since it's part of the public URL
+(`/api/content/wine/1b1f…`). The prefixed ids (`sch_`, `fld_`) are internal only and never
+leave the admin API.
+
+The **Public API** section in the sidebar is an in-app playground for exactly these endpoints:
+pick a content type, send the request, and read the response in a JSON viewer. It is the
+quickest way to see the id-to-name translation with real data.
 
 Full API surface: `GET/POST/DELETE /api/schemas[/:id]`,
 `POST /api/schemas/:id/migration-plan` (dry run), `POST /api/schemas/:id/migrate` (apply),
@@ -145,6 +180,10 @@ The pure logic — the conversion table and the migration planner especially —
 test-first with Vitest (`npm run test`): the full conversion matrix (including the
 `"vintage"`/`"n/a"` → number case), planner scenarios for every change kind, override
 application, the store round-trip/rollback, entry validation, and read-API translation.
+
+The web side is covered with Vitest + Testing Library: the number field and its stepper, the
+schema-driven entry input (including the non-negative constraint), entry validation, and the
+shared loading/empty/error views.
 
 The interactive flows (create a type, the dynamic entry editor + reference picker, and the whole
 migration preview → fix → apply, plus the 409-refresh and open-entry banner) were exercised
@@ -161,12 +200,28 @@ end-to-end in a headless browser during development.
 - Deleting a content type cascades its entries but leaves references to it from other types
   dangling (surfaced as invalid on next edit rather than cleaned up).
 
+## Shipped after the first pass
+
+- Light/dark theme, following the system preference and remembered per browser.
+- Server-side search, per-field filters, sorting and pagination on the entries list, all driven
+  by query params on the URI (`?page=&pageSize=&search=&sortBy=&filter[fieldId]=`).
+- A column picker on the entries table (up to six, remembered per content type).
+- A `0 or positive` constraint for number fields, validated on both client and server. Turning
+  it on is a migration change kind of its own, so entries already holding a negative value are
+  flagged in the preview and fixed before it applies.
+- The **Public API** explorer in the sidebar.
+- Pagination and field-name filters on the public read API.
+
 ## Possible future improvements
 
-- Field-level constraints (min/max, regex, enums) and default values.
-- Reference `?populate` in the read API, and pagination/filtering.
+- More field-level constraints (min/max, regex, enums) and default values. The non-negative
+  flag already establishes the pattern.
+- Reference `?populate` in the read API.
 - Undo for destructive migrations; a migration history/audit log.
 - Auth + per-role permissions; multi-tenant workspaces.
 - Route-level code splitting to trim the initial JS bundle.
-- Optional dark mode (the theme is centralized, so it's a contained addition).
+- Move the store to a real database once a single node stops being enough.
+
+```
+
 ```

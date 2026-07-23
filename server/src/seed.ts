@@ -1,13 +1,20 @@
 import type { Schema, Entry } from "@cms/shared";
 import type { Store } from "./store";
+import { newUuid } from "./ids";
 
 // A fixed timestamp keeps seeded data reproducible across restarts.
 const TS = "2024-01-01T00:00:00.000Z";
 
-// Readable ids make the seed easy to follow. They're still opaque ids: renaming
-// a field never changes them — that's the whole point of keying values by id.
+// Readable ids for schemas and fields make the seed easy to follow. They're
+// internal only: neither ever appears in the public read API.
 const PRODUCER = "sch_producer";
 const WINE = "sch_wine";
+
+// Entries get real GUIDs, exactly like ones created through the app, because an
+// entry id is part of the public URL: /api/content/:type/:guid
+const PROD_MARGAUX = newUuid();
+const PROD_PENFOLDS = newUuid();
+const PROD_OPUS = newUuid();
 
 const producerSchema: Schema = {
   id: PRODUCER,
@@ -65,7 +72,7 @@ const wineSchema: Schema = {
 
 const producerEntries: Entry[] = [
   {
-    id: "ent_prod_margaux",
+    id: PROD_MARGAUX,
     schemaId: PRODUCER,
     values: {
       fld_prod_name: "Château Margaux",
@@ -76,7 +83,7 @@ const producerEntries: Entry[] = [
     updatedAt: TS,
   },
   {
-    id: "ent_prod_penfolds",
+    id: PROD_PENFOLDS,
     schemaId: PRODUCER,
     values: {
       fld_prod_name: "Penfolds",
@@ -87,7 +94,7 @@ const producerEntries: Entry[] = [
     updatedAt: TS,
   },
   {
-    id: "ent_prod_opus",
+    id: PROD_OPUS,
     schemaId: PRODUCER,
     values: {
       fld_prod_name: "Opus One",
@@ -101,7 +108,7 @@ const producerEntries: Entry[] = [
 
 const wineEntries: Entry[] = [
   {
-    id: "ent_wine_margaux15",
+    id: newUuid(),
     schemaId: WINE,
     values: {
       fld_wine_name: "Château Margaux 2015",
@@ -109,13 +116,13 @@ const wineEntries: Entry[] = [
       fld_wine_rating: 98,
       fld_wine_stock: true,
       fld_wine_release: "2018-03-01",
-      fld_wine_producer: "ent_prod_margaux",
+      fld_wine_producer: PROD_MARGAUX,
     },
     createdAt: TS,
     updatedAt: TS,
   },
   {
-    id: "ent_wine_grange",
+    id: newUuid(),
     schemaId: WINE,
     values: {
       fld_wine_name: "Penfolds Grange",
@@ -123,13 +130,13 @@ const wineEntries: Entry[] = [
       fld_wine_rating: 96,
       fld_wine_stock: false,
       fld_wine_release: "2019-06-15",
-      fld_wine_producer: "ent_prod_penfolds",
+      fld_wine_producer: PROD_PENFOLDS,
     },
     createdAt: TS,
     updatedAt: TS,
   },
   {
-    id: "ent_wine_opus_nv",
+    id: newUuid(),
     schemaId: WINE,
     values: {
       fld_wine_name: "Opus One NV",
@@ -137,26 +144,26 @@ const wineEntries: Entry[] = [
       fld_wine_rating: 93,
       fld_wine_stock: true,
       fld_wine_release: "2020-01-20",
-      fld_wine_producer: "ent_prod_opus",
+      fld_wine_producer: PROD_OPUS,
     },
     createdAt: TS,
     updatedAt: TS,
   },
   {
-    id: "ent_wine_mystery",
+    id: newUuid(),
     schemaId: WINE,
     values: {
       fld_wine_name: "Mystery Red",
       fld_wine_year: "", // empty — no fix needed, just drops out
       fld_wine_rating: 88,
       fld_wine_stock: false,
-      fld_wine_producer: "ent_prod_margaux",
+      fld_wine_producer: PROD_MARGAUX,
     },
     createdAt: TS,
     updatedAt: TS,
   },
   {
-    id: "ent_wine_margaux16",
+    id: newUuid(),
     schemaId: WINE,
     values: {
       fld_wine_name: "Château Margaux 2016",
@@ -164,7 +171,7 @@ const wineEntries: Entry[] = [
       fld_wine_rating: 97,
       fld_wine_stock: true,
       fld_wine_release: "2019-04-01",
-      fld_wine_producer: "ent_prod_margaux",
+      fld_wine_producer: PROD_MARGAUX,
     },
     createdAt: TS,
     updatedAt: TS,

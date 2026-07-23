@@ -16,34 +16,34 @@ phrasing fixed, intent kept). My prompts only — no answers or code.
    trade-offs and options — then write up a plan for my approval. Only start
    implementing once I've signed off.
 
-   *What I'm building:* the admin panel for a small headless CMS (the kind of tool
+   _What I'm building:_ the admin panel for a small headless CMS (the kind of tool
    that sits behind something like Contentful or Strapi). People define their own
    content types ("schemas") — a named set of typed fields — and manage entries
    through them. The front end is the main focus; keep the backend thin. Core
    features:
-   - *Schema builder* — create and edit content types, with field types text,
+   - _Schema builder_ — create and edit content types, with field types text,
      number, boolean, date, and reference (a field pointing to an entry of another
      schema).
-   - *Dynamic entry editor* — create/view/edit/delete entries for any schema, with
+   - _Dynamic entry editor_ — create/view/edit/delete entries for any schema, with
      the form generated from the schema definition (not hand-written per type) and
      updating when the schema changes; browse a schema's entries and jump to
      referenced ones.
-   - *Real-time updates* — other open clients see changes without a refresh, and a
+   - _Real-time updates_ — other open clients see changes without a refresh, and a
      schema change that hits an entry someone has open is handled gracefully.
-   - *Schema evolution (the part I care about most)* — when a field is renamed,
+   - _Schema evolution (the part I care about most)_ — when a field is renamed,
      deleted, retyped, made required, or a reference is retargeted, existing entries
      may not fit: communicate the risk, show which entries are affected, preview the
      change before applying, and let people fix data that no longer fits. The nasty
      case is a text "year" field holding values like "vintage" and "n/a" being
      switched to number.
-   - *Read API* — a simple read-only API over the content (e.g. `GET
-     /api/content/[type]` and `/[type]/:id`), proving another app could consume it.
+   - _Read API_ — a simple read-only API over the content (e.g. `GET
+/api/content/[type]` and `/[type]/:id`), proving another app could consume it.
 
-   *Stack:* React + TypeScript + Vite + Tailwind (layout) + MUI (components); Node +
+   _Stack:_ React + TypeScript + Vite + Tailwind (layout) + MUI (components); Node +
    Express + TypeScript. Only add a library if it genuinely earns its place — no
    Redux; prefer clean, obvious code over clever abstractions.
 
-   *Decisions I've already made (challenge them if you disagree):*
+   _Decisions I've already made (challenge them if you disagree):_
    - Monorepo with npm workspaces; `npm run dev` boots backend and frontend together.
    - Store entry values keyed by field **id**, never by name, so renaming a field is
      pure metadata; the read API translates ids back to names on the way out.
@@ -66,11 +66,11 @@ phrasing fixed, intent kept). My prompts only — no answers or code.
    - Zod for request-shape validation; schema-driven entry validation as a plain
      function.
 
-   *UI/design:* I care how this looks — properly design and polish the interface
+   _UI/design:_ I care how this looks — properly design and polish the interface
    (clean, minimal, modern, consistent, responsive, accessible) and iterate with me
    rather than dropping default components on a page.
 
-   *Implementation & quality:* implement it feature by feature; write the pure logic
+   _Implementation & quality:_ implement it feature by feature; write the pure logic
    (the conversion table and migration planner especially) test-first; fix root
    causes, not symptoms; everything in English; strict TypeScript, no `any`,
    functional components, small focused files, and comments only for the non-obvious
@@ -102,9 +102,9 @@ phrasing fixed, intent kept). My prompts only — no answers or code.
 
 ---
 
-## Chat 2 — Public npm install and UI tests
+## Chat 2 — Public npm install, UI tests, and read-API pagination
 
-Only these two prompts were made in this chat, rewritten a little cleaner than
+Only these three prompts were made in this chat, rewritten a little cleaner than
 they were originally asked.
 
 ### 1. Make the project installable by anyone (remove the private registry)
@@ -137,3 +137,21 @@ add component tests for the key pieces:
 
 Wire a `test` script and make `npm run test` at the repo root run both the
 server and the web tests.
+
+### 3. Add filters and caller-controlled pagination to the public read API
+
+The admin API already does search, filters, sorting and pagination server side,
+but the public read API still returns the whole collection. Bring it up to the
+same level:
+
+- Paginate with `?page` and `?pageSize`, where the consumer chooses how many
+  entries per page. Omitting `pageSize` returns everything; cap it so a single
+  request cannot pull the entire store.
+- Add filters keyed by **field name**, since the public contract is by name
+  rather than by field id: contains for text, exact for number, date, boolean
+  and reference, plus `[min]`/`[max]` ranges for numbers and dates.
+- Return the collection as an envelope (`items`, `total`, `page`, `pageSize`) so
+  pagination is self-describing, with `total` counted after filtering and before
+  pagination. Keep a single entry returned bare.
+- Reject an unknown field name with a 400 instead of ignoring the filter, so
+  typos surface immediately.

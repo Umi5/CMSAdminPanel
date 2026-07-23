@@ -10,6 +10,7 @@ import {
 import { useEffect } from "react";
 import LayersRoundedIcon from "@mui/icons-material/LayersRounded";
 import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
+import DataObjectRoundedIcon from "@mui/icons-material/DataObjectRounded";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import type { EntryCounts } from "@cms/shared";
 import { useSchemas } from "@/shared/schema/SchemaProvider";
@@ -132,6 +133,12 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             to="/schemas"
             label="Content types"
             icon={<CategoryRoundedIcon sx={{ fontSize: 18 }} />}
+            onNavigate={onNavigate}
+          />
+          <NavItem
+            to="/api-explorer"
+            label="Public API"
+            icon={<DataObjectRoundedIcon sx={{ fontSize: 18 }} />}
             onNavigate={onNavigate}
           />
         </List>

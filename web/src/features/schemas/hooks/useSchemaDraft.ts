@@ -52,6 +52,38 @@ function cleanField(field: DraftField): DraftField {
   return base;
 }
 
+// Deterministic shape for comparing a draft against what is stored: fixed key
+// order, trimmed names, and optional flags spelled out so "absent" and "false"
+// compare equal.
+function normalizeDraft(draft: SchemaDraftPayload) {
+  return {
+    name: draft.name.trim(),
+    apiId: draft.apiId.trim(),
+    fields: draft.fields.map((f) => ({
+      id: f.id,
+      name: f.name.trim(),
+      type: f.type,
+      required: f.required,
+      referenceSchemaId: f.referenceSchemaId ?? null,
+      nonNegative: f.nonNegative ?? false,
+    })),
+  };
+}
+
+/**
+ * Whether two drafts are identical. The migration plan only reports changes that
+ * touch stored data, so the builder needs this to tell "nothing changed" apart
+ * from "changed, but no entry is affected" (a rename, an apiId, a constraint).
+ */
+export function draftsEqual(
+  a: SchemaDraftPayload,
+  b: SchemaDraftPayload,
+): boolean {
+  return (
+    JSON.stringify(normalizeDraft(a)) === JSON.stringify(normalizeDraft(b))
+  );
+}
+
 export interface DraftErrors {
   name?: string;
   apiId?: string;

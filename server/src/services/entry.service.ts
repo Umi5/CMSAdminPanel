@@ -1,7 +1,7 @@
 import type { Entry, EntryPage, Field, Schema } from "@cms/shared";
 import { store } from "../store";
 import { HttpError } from "../http";
-import { newId } from "../ids";
+import { newUuid } from "../ids";
 import {
   validateEntryValues,
   isEmpty,
@@ -162,7 +162,7 @@ export const entryService = {
     assertValid(schema, values);
     const now = new Date().toISOString();
     const entry: Entry = {
-      id: newId("ent"),
+      id: newUuid(),
       schemaId,
       values: cleanValues(schema, values),
       createdAt: now,

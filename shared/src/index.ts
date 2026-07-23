@@ -56,6 +56,8 @@ export type ChangeKind =
   | "field_retyped"
   | "required_enabled"
   | "required_disabled"
+  | "constraint_enabled"
+  | "constraint_disabled"
   | "reference_retargeted";
 
 // --- Migration plan and application ---

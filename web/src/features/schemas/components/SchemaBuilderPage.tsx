@@ -12,6 +12,7 @@ import { useDocumentTitle } from "@/shared/hooks/useDocumentTitle";
 import { SchemaBuilder } from "./SchemaBuilder";
 import { MigrationPreviewDialog } from "./MigrationPreviewDialog";
 import {
+  draftsEqual,
   newDraftField,
   schemaToDraft,
   type SchemaDraftPayload,
@@ -89,7 +90,13 @@ export function SchemaBuilderPage() {
         `/schemas/${schemaId}/migration-plan`,
         { draft },
       );
-      if (plan.changes.length === 0) {
+      // An empty plan only means "no entry is affected". Renaming the type or
+      // changing its apiId touches no data, so it would otherwise be silently
+      // dropped here. Compare against what is stored instead.
+      const unchanged =
+        existing !== undefined && draftsEqual(draft, schemaToDraft(existing));
+
+      if (plan.changes.length === 0 && unchanged) {
         showToast("No changes to apply", "info");
         navigate(backTo);
         return;

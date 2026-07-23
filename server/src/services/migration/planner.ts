@@ -66,6 +66,38 @@ function requiredEnabledChange(
   };
 }
 
+function constraintDisabledChange(draftField: Field): FieldChange {
+  return base(draftField, "constraint_disabled", "safe");
+}
+
+// Turning on "0 or positive" can invalidate data that is already stored, exactly
+// like making a field required, so it is flagged the same way.
+function constraintEnabledChange(
+  draftField: Field,
+  entries: Entry[],
+): FieldChange {
+  const needsAttention: ValueIssue[] = [];
+  for (const entry of entries) {
+    const value = entry.values[draftField.id];
+    if (typeof value === "number" && value < 0) {
+      needsAttention.push({
+        entryId: entry.id,
+        currentValue: value,
+        reason: "is negative but the field is now 0 or positive",
+      });
+    }
+  }
+  return {
+    ...base(
+      draftField,
+      "constraint_enabled",
+      needsAttention.length > 0 ? "warning" : "safe",
+    ),
+    affectedCount: needsAttention.length,
+    needsAttention,
+  };
+}
+
 function addedChange(draftField: Field, entries: Entry[]): FieldChange {
   if (!draftField.required) return base(draftField, "field_added", "safe");
   const needsAttention: ValueIssue[] = entries.map((entry) => ({
@@ -200,6 +232,13 @@ export function planMigration(
       currentField.referenceSchemaId !== draftField.referenceSchemaId
     ) {
       changes.push(retargetedChange(draftField, entries, refExistsInTarget));
+    } else if (draftField.type === "number") {
+      // Same type, so a toggled non-negative constraint is its own change.
+      if (!currentField.nonNegative && draftField.nonNegative) {
+        changes.push(constraintEnabledChange(draftField, entries));
+      } else if (currentField.nonNegative && !draftField.nonNegative) {
+        changes.push(constraintDisabledChange(draftField));
+      }
     }
   }
 
